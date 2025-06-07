@@ -89,32 +89,8 @@
     </div>
 </div>
 
-<!-- トースト用のコンテナ -->
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="successToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <i class="fas fa-check-circle text-success me-2"></i>
-            <strong class="me-auto">成功</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" id="toastMessage">
-            <!-- メッセージがここに表示されます -->
-        </div>
-    </div>
-</div>
-
-<div class="toast-container position-fixed bottom-0 end-0 p-3">
-    <div id="errorToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <i class="fas fa-exclamation-circle text-danger me-2"></i>
-            <strong class="me-auto">エラー</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" id="errorMessage">
-            <!-- エラーメッセージがここに表示されます -->
-        </div>
-    </div>
-</div>
+<!-- トースト通知 -->
+{% include 'components/toast.html' %}
 {% endblock %}
 
 {% block extra_js %}
@@ -122,21 +98,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('ライン管理ページ読み込み完了');
     
-    // トースト表示関数
-    function showToast(type, message) {
-        const toastId = type === 'success' ? 'successToast' : 'errorToast';
-        const messageId = type === 'success' ? 'toastMessage' : 'errorMessage';
-        
-        const toastElement = document.getElementById(toastId);
-        if (toastElement) {
-            const toast = new bootstrap.Toast(toastElement);
-            const messageElement = document.getElementById(messageId);
-            if (messageElement) {
-                messageElement.textContent = message;
-            }
-            toast.show();
-        }
-    }
+    // **修正**: トースト表示関数は外部のshowToast関数を使用
 
     // 新規追加フォームの送信処理
     const lineForm = document.getElementById('lineForm');
@@ -251,8 +213,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 編集・削除ボタンのクリックイベント（イベントデリゲーション）
     document.addEventListener('click', function(e) {
+        // 編集ボタンの処理
         const editBtn = e.target.closest('.edit-line');
         if (editBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const lineId = editBtn.getAttribute('data-line-id');
             
             fetch(`{% url 'manufacturing:line_edit' 0 %}`.replace('0', lineId), {
@@ -263,8 +229,35 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.text())
             .then(html => {
                 const modal = document.getElementById('lineEditModal');
+                
+                // **修正**: 既存のモーダルインスタンスをクリーンアップ
+                const existingModal = bootstrap.Modal.getInstance(modal);
+                if (existingModal) {
+                    existingModal.dispose();
+                }
+                
+                // **修正**: オーバーレイを強制削除
+                const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+                existingBackdrops.forEach(backdrop => backdrop.remove());
+                
+                // モーダルコンテンツを更新
                 modal.querySelector('.modal-content').innerHTML = html;
+                
+                // 新しいモーダルインスタンスを作成
                 const bsModal = new bootstrap.Modal(modal);
+                
+                // **修正**: モーダル非表示時のクリーンアップイベントを追加
+                modal.addEventListener('hidden.bs.modal', function() {
+                    // オーバーレイを確実に削除
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(backdrop => backdrop.remove());
+                    
+                    // body要素のクラスをクリーンアップ
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }, { once: true }); // 一度だけ実行
+                
                 bsModal.show();
                 
                 // 編集フォームの送信処理
@@ -312,41 +305,89 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('Error:', error);
                 showToast('error', '編集画面の読み込みに失敗しました。');
             });
+            return; // 早期リターンで削除処理との重複を防ぐ
         }
         
-        // 削除ボタンのクリックイベント
+        // **修正**: 削除ボタンの処理（モーダル使用）
         const deleteBtn = e.target.closest('.delete-line');
         if (deleteBtn) {
-            const lineId = deleteBtn.getAttribute('data-line-id');
-            const lineName = deleteBtn.getAttribute('data-line-name');
+            e.preventDefault();
+            e.stopPropagation();
             
-            if (confirm(`本当に「${lineName}」を削除してもよろしいですか？\nこの操作は取り消せません。`)) {
-                fetch(`{% url 'manufacturing:line_delete' 0 %}`.replace('0', lineId), {
-                    method: 'DELETE',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.status === 'success') {
-                        showToast('success', data.message);
-                        
-                        // テーブルを更新
-                        if (data.html) {
-                            document.getElementById('lineTableContainer').innerHTML = data.html;
-                            initializePaginationEvents();
-                        }
-                    } else {
-                        showToast('error', data.message);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', '削除に失敗しました。');
-                });
-            }
+            const lineId = deleteBtn.getAttribute('data-line-id');
+            
+            // **修正**: 削除モーダル用のエンドポイントを使用
+            fetch(`{% url 'manufacturing:line_delete_modal' 0 %}`.replace('0', lineId), {
+                headers: {
+                    'HX-Request': 'true'
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                // **修正**: 既存の削除モーダルを削除
+                const existingDeleteModals = document.querySelectorAll(`[id^="deleteLineModal"]`);
+                existingDeleteModals.forEach(modal => modal.remove());
+                
+                // **修正**: モーダルを非表示の状態で追加
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                const newModalElement = tempDiv.firstElementChild;
+                
+                // モーダルをページに追加（非表示状態）
+                document.body.appendChild(newModalElement);
+                
+                // **修正**: モーダルを即座に表示
+                const bsModal = new bootstrap.Modal(newModalElement);
+                bsModal.show();
+                
+                // モーダル非表示時のクリーンアップ
+                newModalElement.addEventListener('hidden.bs.modal', function() {
+                    newModalElement.remove();
+                    // オーバーレイのクリーンアップ
+                    const backdrops = document.querySelectorAll('.modal-backdrop');
+                    backdrops.forEach(backdrop => backdrop.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }, { once: true });
+                
+                // 削除確認ボタンのイベント処理
+                const deleteConfirmBtn = newModalElement.querySelector('.btn-danger');
+                if (deleteConfirmBtn) {
+                    deleteConfirmBtn.addEventListener('click', function() {
+                        fetch(`{% url 'manufacturing:line_delete' 0 %}`.replace('0', lineId), {
+                            method: 'DELETE',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                            }
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.status === 'success') {
+                                bsModal.hide();
+                                showToast('success', data.message);
+                                
+                                // テーブルを更新
+                                if (data.html) {
+                                    document.getElementById('lineTableContainer').innerHTML = data.html;
+                                    initializePaginationEvents();
+                                }
+                            } else {
+                                showToast('error', data.message);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            showToast('error', '削除に失敗しました。');
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', '削除画面の読み込みに失敗しました。');
+            });
         }
     });
 

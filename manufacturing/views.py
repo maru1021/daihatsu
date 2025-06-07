@@ -26,7 +26,7 @@ class LineMasterView(TemplateView):
     def get(self, request, *args, **kwargs):
         # HTMXリクエストの詳細判定
         is_htmx = request.headers.get('HX-Request')
-        has_search_param = 'search' in request.GET  # 検索パラメータの存在（値が空でも）
+        has_search_param = 'search' in request.GET
         has_page = request.GET.get('page') is not None
         has_pk = 'pk' in kwargs
         
@@ -140,6 +140,20 @@ class LineMasterView(TemplateView):
                 'status': 'error',
                 'message': f'エラーが発生しました: {str(e)}'
             }, status=400)
+
+class LineDeleteModalView(TemplateView):
+    template_name = 'master/line_master/line_delete_modal.html'
+
+    def get(self, request, *args, **kwargs):
+        line = get_object_or_404(Line, pk=kwargs['pk'])
+        
+        if request.headers.get('HX-Request'):
+            # HTMXリクエストの場合、モーダルの内容だけを返す
+            context = {'line': line}
+            return render(request, self.template_name, context)
+        else:
+            # 直接アクセスの場合は適切にハンドリング
+            return HttpResponse("Direct access not allowed", status=403)
 
 class MachineMasterView(TemplateView):
     template_name = 'master/machine_master/machine_master.html'
