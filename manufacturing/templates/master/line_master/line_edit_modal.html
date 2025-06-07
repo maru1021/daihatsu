@@ -1,0 +1,46 @@
+<!-- 編集モーダル -->
+<div class="modal fade" id="lineEditModal" tabindex="-1" aria-labelledby="lineEditModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lineEditModalLabel">ライン編集</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form hx-post="{% url 'manufacturing:line_edit' line.id %}" hx-target="#lineContent">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">ライン名</label>
+                        <input type="text" class="form-control" id="id_name" name="name" value="{{ line.name }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_x_position" class="form-label">X座標</label>
+                        <input type="number" class="form-control" id="id_x_position" name="x_position" value="{{ line.x_position }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_y_position" class="form-label">Y座標</label>
+                        <input type="number" class="form-control" id="id_y_position" name="y_position" value="{{ line.y_position }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_width" class="form-label">幅</label>
+                        <input type="number" class="form-control" id="id_width" name="width" value="{{ line.width }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_height" class="form-label">高さ</label>
+                        <input type="number" class="form-control" id="id_height" name="height" value="{{ line.height }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="id_active" name="active" {% if line.active %}checked{% endif %}>
+                            <label class="form-check-label" for="id_active">有効</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 

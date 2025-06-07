@@ -1,0 +1,14 @@
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead>
+            {% include 'master/line_master/line_table_header.html' %}
+        </thead>
+        <tbody id="lineTableBody">
+            {% for line in lines %}
+            {% include 'master/line_master/line_row.html' %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% include 'master/line_master/line_pagination.html' %} 

@@ -1,0 +1,45 @@
+<nav class="sidebar" id="main-sidebar">
+  <div class="sidebar-header">
+    <h3>Daihatsu</h3>
+  </div>
+  <ul class="nav flex-column">
+    <li class="nav-item">
+      <a
+        class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+        href="{% url 'home' %}"
+        hx-get="{% url 'home' %}"
+        hx-target=".main-content"
+        hx-push-url="true"
+      >
+        <i class="fas fa-home"></i>
+        ホーム
+      </a>
+    </li>
+    {% include 'sidebar/components/manufacturing.html' %} 
+    {% include 'sidebar/components/admin.html' %}
+    <li class="nav-item">
+      <a
+        class="nav-link {% if 'attendance' in request.resolver_match.url_name %}active{% endif %}"
+        href="#"
+        hx-get="#"
+        hx-target=".main-content"
+        hx-push-url="true"
+      >
+        <i class="fas fa-clock"></i>
+        勤怠管理
+      </a>
+    </li>
+    <li class="nav-item">
+      <a
+        class="nav-link {% if 'admin:index' in request.resolver_match.url_name %}active{% endif %}"
+        href="{% url 'admin:index' %}"
+        hx-get="{% url 'admin:index' %}"
+        hx-target=".main-content"
+        hx-push-url="true"
+      >
+        <i class="fas fa-cog"></i>
+        データベース管理画面
+      </a>
+    </li>
+  </ul>
+</nav>

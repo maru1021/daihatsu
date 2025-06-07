@@ -1,0 +1,18 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">ライン管理</h1>
+    <div class="d-flex gap-2">
+        <!-- 検索フォーム -->
+        <form class="d-flex" hx-get="{% url 'manufacturing:line_master' %}" hx-target="#lineContent" hx-trigger="input delay:500ms">
+            <div class="input-group">
+                <input type="text" class="form-control" name="search" placeholder="ライン名で検索..." value="{{ search_query }}">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+        <!-- 新規追加ボタン -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#lineFormModal">
+            <i class="fas fa-plus"></i> 新規ライン追加
+        </button>
+    </div>
+</div> 

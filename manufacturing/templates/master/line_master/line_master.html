@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}ライン管理{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    {% include 'master/line_master/line_header.html' %}
+    <div id="lineContent">
+        {% include 'master/line_master/line_table.html' %}
+    </div>
+</div>
+
+<!-- 新規追加モーダル -->
+<div class="modal fade" id="lineFormModal" tabindex="-1" aria-labelledby="lineFormModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="lineFormModalLabel">新規ライン追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form hx-post="{% url 'manufacturing:line_master' %}" hx-target="#lineContent" hx-swap="innerHTML">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="id_name" class="form-label">ライン名</label>
+                        <input type="text" class="form-control" id="id_name" name="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_x_position" class="form-label">X座標</label>
+                        <input type="number" class="form-control" id="id_x_position" name="x_position" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_y_position" class="form-label">Y座標</label>
+                        <input type="number" class="form-control" id="id_y_position" name="y_position" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_width" class="form-label">幅</label>
+                        <input type="number" class="form-control" id="id_width" name="width" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_height" class="form-label">高さ</label>
+                        <input type="number" class="form-control" id="id_height" name="height" value="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="id_active" name="active" checked>
+                            <label class="form-check-label" for="id_active">有効</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                    <button type="submit" class="btn btn-primary">登録</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- 編集モーダル -->
+<div class="modal fade" id="lineEditModal" tabindex="-1" aria-labelledby="lineEditModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- モーダルの内容はHTMXで動的に読み込まれます -->
+        </div>
+    </div>
+</div>
+
+{% include 'components/toast.html' %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // HTMXのイベントハンドリング
+    document.body.addEventListener('htmx:afterRequest', function(evt) {
+        if (evt.detail.verb === 'post' && evt.detail.target.id === 'lineContent') {
+            try {
+                const response = JSON.parse(evt.detail.xhr.response);
+                if (evt.detail.successful) {
+                    // モーダルを閉じる
+                    const modalElement = document.getElementById('lineFormModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                    modal.hide();
+                    
+                    // フォームをリセット
+                    const form = document.querySelector('#lineFormModal form');
+                    if (form) {
+                        form.reset();
+                        // 初期値を再設定
+                        document.getElementById('id_x_position').value = '1';
+                        document.getElementById('id_y_position').value = '1';
+                        document.getElementById('id_width').value = '1';
+                        document.getElementById('id_height').value = '1';
+                    }
+                    
+                    // 成功メッセージを表示
+                    showToast('success', response.message);
+
+                    // コンテンツを更新
+                    if (response.html) {
+                        const lineContent = document.getElementById('lineContent');
+                        if (lineContent) {
+                            lineContent.innerHTML = response.html;
+                            // ページネーションのリンクにHTMX属性を追加
+                            document.querySelectorAll('.pagination a').forEach(link => {
+                                link.setAttribute('hx-target', '#lineContent');
+                                link.setAttribute('hx-swap', 'innerHTML');
+                            });
+                        }
+                    }
+                } else {
+                    // エラーメッセージを表示
+                    showToast('error', response.message);
+                }
+            } catch (e) {
+                console.error('JSONの解析に失敗しました:', e);
+            }
+        }
+    });
+
+    // 編集ボタンのクリックイベント
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.edit-line')) {
+            const modal = document.getElementById('lineEditModal');
+            if (modal) {
+                const bsModal = new bootstrap.Modal(modal);
+                bsModal.show();
+            }
+        }
+    });
+
+    // ページネーションのリンクにHTMX属性を追加
+    document.querySelectorAll('.pagination a').forEach(link => {
+        link.setAttribute('hx-target', '#lineContent');
+        link.setAttribute('hx-swap', 'innerHTML');
+    });
+
+    // HTMXのコンテンツ更新後の処理
+    document.body.addEventListener('htmx:afterSwap', function(evt) {
+        if (evt.detail.target.id === 'lineContent') {
+            // ページネーションのリンクにHTMX属性を追加
+            document.querySelectorAll('.pagination a').forEach(link => {
+                link.setAttribute('hx-target', '#lineContent');
+                link.setAttribute('hx-swap', 'innerHTML');
+            });
+        }
+    });
+
+    // 新規追加ボタンのクリックイベント
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('#addLineBtn')) {
+            const form = document.querySelector('#lineFormModal form');
+            if (form) {
+                form.reset();
+                // 初期値を設定
+                document.getElementById('id_x_position').value = '1';
+                document.getElementById('id_y_position').value = '1';
+                document.getElementById('id_width').value = '1';
+                document.getElementById('id_height').value = '1';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

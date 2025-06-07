@@ -1,0 +1,92 @@
+<div class="modal fade" id="machineFormModal" tabindex="-1" aria-labelledby="machineFormModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="machineFormModalLabel">加工機登録</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="machineForm" 
+              hx-post="{% url 'manufacturing:machine_master' %}"
+              hx-target="#machineTableBody"
+              hx-swap="afterbegin"
+              hx-indicator="#machineFormSpinner"
+              hx-on::after-request="handleMachineFormResponse(event)">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label for="name" class="form-label">機械名</label>
+            <input type="text" class="form-control" id="name" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="line" class="form-label">所属ライン</label>
+            <select class="form-select" id="line" name="line">
+              <option value="">選択してください</option>
+              {% for line in lines %}
+              <option value="{{ line.id }}">{{ line.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="x_position" class="form-label">X座標</label>
+              <input type="number" class="form-control" id="x_position" name="x_position" value="0" min="0" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="y_position" class="form-label">Y座標</label>
+              <input type="number" class="form-control" id="y_position" name="y_position" value="0" min="0" required>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="width" class="form-label">横幅</label>
+              <input type="number" class="form-control" id="width" name="width" value="50" min="1" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label for="height" class="form-label">縦幅</label>
+              <input type="number" class="form-control" id="height" name="height" value="50" min="1" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="status" class="form-label">ステータス</label>
+            <select class="form-select" id="status" name="status" required>
+              <option value="active">稼働中</option>
+              <option value="maintenance">メンテナンス中</option>
+              <option value="stopped">停止中</option>
+            </select>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+            <button type="submit" class="btn btn-primary">
+              <span id="machineFormSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span>
+              登録
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function handleMachineFormResponse(event) {
+  if (event.detail.successful) {
+    // モーダルを閉じる
+    const modal = document.getElementById('machineFormModal');
+    const modalInstance = bootstrap.Modal.getInstance(modal);
+    modalInstance.hide();
+
+    // フォームをリセット
+    document.getElementById('machineForm').reset();
+
+    // 成功メッセージを表示
+    const toast = new bootstrap.Toast(document.getElementById('successToast'));
+    document.getElementById('toastMessage').textContent = '加工機を登録しました';
+    toast.show();
+  } else {
+    // エラーメッセージを表示
+    const toast = new bootstrap.Toast(document.getElementById('errorToast'));
+    document.getElementById('errorMessage').textContent = event.detail.xhr.responseText;
+    toast.show();
+  }
+}
+</script> 

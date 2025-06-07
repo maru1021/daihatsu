@@ -1,0 +1,46 @@
+<li class="nav-item">
+  <a
+    class="nav-link {% if 'admin' in request.resolver_match.url_name %}active{% endif %}"
+    href="#"
+    data-bs-toggle="collapse"
+    data-bs-target="#adminSubmenu"
+  >
+    <i class="fas fa-building"></i>
+    管理室
+  </a>
+  <div
+    class="collapse submenu {% if 'admin' in request.resolver_match.url_name %}show{% endif %}"
+    id="adminSubmenu"
+  >
+    <a
+      class="nav-link {% if 'hr' in request.resolver_match.url_name %}active{% endif %}"
+      href="#"
+      hx-get="#"
+      hx-target=".main-content"
+      hx-push-url="true"
+    >
+      <i class="fas fa-users"></i>
+      人事管理
+    </a>
+    <a
+      class="nav-link {% if 'analysis' in request.resolver_match.url_name %}active{% endif %}"
+      href="#"
+      hx-get="#"
+      hx-target=".main-content"
+      hx-push-url="true"
+    >
+      <i class="fas fa-chart-line"></i>
+      経営分析
+    </a>
+    <a
+      class="nav-link {% if 'accounting' in request.resolver_match.url_name %}active{% endif %}"
+      href="#"
+      hx-get="#"
+      hx-target=".main-content"
+      hx-push-url="true"
+    >
+      <i class="fas fa-file-invoice"></i>
+      経理管理
+    </a>
+  </div>
+</li>

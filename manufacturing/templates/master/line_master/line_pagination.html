@@ -1,0 +1,41 @@
+<nav aria-label="ページネーション" class="mt-4">
+    <ul class="pagination justify-content-end">
+        {% if lines.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" hx-get="{% url 'manufacturing:line_master' %}?page=1" hx-target="#lineContent" aria-label="最初">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ lines.previous_page_number }}" hx-get="{% url 'manufacturing:line_master' %}?page={{ lines.previous_page_number }}" hx-target="#lineContent" aria-label="前へ">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+        {% endif %}
+
+        {% for num in lines.paginator.page_range %}
+            {% if lines.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+            {% elif num > lines.number|add:'-3' and num < lines.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}" hx-get="{% url 'manufacturing:line_master' %}?page={{ num }}" hx-target="#lineContent">{{ num }}</a>
+                </li>
+            {% endif %}
+        {% endfor %}
+
+        {% if lines.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ lines.next_page_number }}" hx-get="{% url 'manufacturing:line_master' %}?page={{ lines.next_page_number }}" hx-target="#lineContent" aria-label="次へ">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ lines.paginator.num_pages }}" hx-get="{% url 'manufacturing:line_master' %}?page={{ lines.paginator.num_pages }}" hx-target="#lineContent" aria-label="最後">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+</nav> 

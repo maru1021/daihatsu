@@ -1,0 +1,217 @@
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>加工機管理</h1>
+    <button class="btn btn-primary"><i class="fas fa-plus"></i> 新しい加工機追加</button>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header bg-white">
+          <div class="row align-items-center">
+            <div class="col">
+              <h5 class="card-title mb-0">加工機一覧</h5>
+            </div>
+            <div class="col-auto">
+              <div class="input-group">
+                <input type="text" class="form-control" placeholder="検索..." id="machineSearch">
+                <button class="btn btn-outline-secondary" type="button">
+                  <i class="fas fa-search"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th class="sortable" data-sort="machine_id">機械ID <i class="fas fa-sort"></i></th>
+                  <th class="sortable" data-sort="name">機械名 <i class="fas fa-sort"></i></th>
+                  <th class="sortable" data-sort="status">ステータス <i class="fas fa-sort"></i></th>
+                  <th class="sortable" data-sort="line">所属ライン <i class="fas fa-sort"></i></th>
+                  <th class="sortable" data-sort="x_position">位置情報 <i class="fas fa-sort"></i></th>
+                  <th class="sortable" data-sort="width">サイズ <i class="fas fa-sort"></i></th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for machine in machines %}
+                <tr>
+                  <td>{{ machine.machine_id }}</td>
+                  <td>{{ machine.name }}</td>
+                  <td>
+                    {% if machine.status == 'active' %}
+                    <span class="badge bg-success rounded-pill">稼働中</span>
+                    {% elif machine.status == 'maintenance' %}
+                    <span class="badge bg-warning rounded-pill">メンテナンス中</span>
+                    {% else %}
+                    <span class="badge bg-danger rounded-pill">停止中</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if machine.line %}
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-industry text-muted me-2"></i>
+                      {{ machine.line.name }}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">未割り当て</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-map-marker-alt text-muted me-2"></i>
+                      X: {{ machine.x_position }}, Y: {{ machine.y_position }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="fas fa-arrows-alt text-muted me-2"></i>
+                      {{ machine.width }} x {{ machine.height }}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="btn-group">
+                      <button class="btn btn-sm btn-outline-primary" title="編集">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      {% if machine.status == 'active' %}
+                      <button class="btn btn-sm btn-outline-warning" title="メンテナンス">
+                        <i class="fas fa-tools"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" title="停止">
+                        <i class="fas fa-stop"></i>
+                      </button>
+                      {% elif machine.status == 'maintenance' %}
+                      <button class="btn btn-sm btn-outline-success" title="再開">
+                        <i class="fas fa-play"></i>
+                      </button>
+                      {% else %}
+                      <button class="btn btn-sm btn-outline-success" title="開始">
+                        <i class="fas fa-play"></i>
+                      </button>
+                      {% endif %}
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr>
+                  <td colspan="7" class="text-center py-4">
+                    <div class="text-muted">
+                      <i class="fas fa-inbox fa-2x mb-2"></i>
+                      <p class="mb-0">加工機が登録されていません</p>
+                    </div>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          {% if machines.has_other_pages %}
+          <nav aria-label="ページネーション" class="mt-4">
+            <ul class="pagination justify-content-center">
+              {% if machines.has_previous %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ machines.previous_page_number }}" aria-label="前へ">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+              </li>
+              {% endif %}
+
+              {% for i in machines.paginator.page_range %}
+                {% if machines.number == i %}
+                <li class="page-item active">
+                  <span class="page-link">{{ i }}</span>
+                </li>
+                {% else %}
+                <li class="page-item">
+                  <a class="page-link" href="?page={{ i }}">{{ i }}</a>
+                </li>
+                {% endif %}
+              {% endfor %}
+
+              {% if machines.has_next %}
+              <li class="page-item">
+                <a class="page-link" href="?page={{ machines.next_page_number }}" aria-label="次へ">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+              {% else %}
+              <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+              </li>
+              {% endif %}
+            </ul>
+          </nav>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // 検索機能
+  const searchInput = document.getElementById('machineSearch');
+  const table = document.querySelector('table');
+  const rows = table.getElementsByTagName('tr');
+
+  searchInput.addEventListener('keyup', function() {
+    const searchText = this.value.toLowerCase();
+    
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      const cells = row.getElementsByTagName('td');
+      let found = false;
+
+      for (let j = 0; j < cells.length - 1; j++) {
+        const cell = cells[j];
+        if (cell.textContent.toLowerCase().indexOf(searchText) > -1) {
+          found = true;
+          break;
+        }
+      }
+
+      row.style.display = found ? '' : 'none';
+    }
+  });
+
+  // ソート機能
+  const headers = document.querySelectorAll('th.sortable');
+  headers.forEach(header => {
+    header.addEventListener('click', function() {
+      const sortBy = this.dataset.sort;
+      const tbody = table.querySelector('tbody');
+      const rows = Array.from(tbody.getElementsByTagName('tr'));
+      
+      rows.sort((a, b) => {
+        const aValue = a.children[Array.from(headers).indexOf(this)].textContent;
+        const bValue = b.children[Array.from(headers).indexOf(this)].textContent;
+        return aValue.localeCompare(bValue, 'ja');
+      });
+
+      if (this.classList.contains('asc')) {
+        rows.reverse();
+        this.classList.remove('asc');
+        this.classList.add('desc');
+      } else {
+        this.classList.remove('desc');
+        this.classList.add('asc');
+      }
+
+      tbody.innerHTML = '';
+      rows.forEach(row => tbody.appendChild(row));
+    });
+  });
+});
+</script>
+{% endblock %}

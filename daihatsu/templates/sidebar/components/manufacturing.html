@@ -1,0 +1,62 @@
+<li class="nav-item">
+  <a
+    class="nav-link {% if 'manufacturing' in request.resolver_match.app_name %}active{% endif %}"
+    href="{% url 'manufacturing:line_map' %}"
+    hx-get="{% url 'manufacturing:line_map' %}"
+    hx-target=".main-content"
+    hx-push-url="true"
+  >
+    <i class="fas fa-map-marked-alt"></i>
+    工場マップ
+  </a>
+</li>
+<li class="nav-item">
+  <a
+    class="nav-link {% if 'manufacturing' in request.resolver_match.app_name %}active{% endif %}"
+    href="#"
+    data-bs-toggle="collapse"
+    data-bs-target="#manufacturingSubmenu"
+  >
+    <i class="fas fa-industry"></i>
+    製造部
+  </a>
+  <div
+    class="collapse submenu {% if 'manufacturing' in request.resolver_match.app_name %}show{% endif %}"
+    id="manufacturingSubmenu"
+  >
+    <a
+      class="nav-link {% if 'manufacturing:line' in request.resolver_match.url_name or 'manufacturing:machine' in request.resolver_match.url_name %}active{% endif %}"
+      href="#"
+      data-bs-toggle="collapse"
+      data-bs-target="#masterSubmenu"
+    >
+      <i class="fas fa-database"></i>
+      マスター管理
+    </a>
+    <div
+      class="collapse submenu {% if 'manufacturing:line_master' in request.resolver_match.url_name or 'manufacturing:machine_master' in request.resolver_match.url_name %}show{% endif %}"
+      id="masterSubmenu"
+    >
+      <a
+        class="nav-link {% if 'manufacturing:line_master' in request.resolver_match.url_name %}active{% endif %}"
+        href="{% url 'manufacturing:line_master' %}"
+        hx-get="{% url 'manufacturing:line_master' %}"
+        hx-target=".main-content"
+        hx-push-url="true"
+      >
+        <i class="fas fa-industry"></i>
+        ライン管理
+      </a>
+      <a
+        class="nav-link {% if 'manufacturing:machine_master' in request.resolver_match.url_name %}active{% endif %}"
+        href="{% url 'manufacturing:machine_master' %}"
+        hx-get="{% url 'manufacturing:machine_master' %}"
+        hx-target=".main-content"
+        hx-push-url="true"
+      >
+        <i class="fas fa-cogs"></i>
+        加工機管理
+      </a>
+    </div>
+  </div>
+</li>

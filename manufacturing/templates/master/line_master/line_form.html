@@ -1,0 +1,155 @@
+<div class="modal fade" id="addLineModal" tabindex="-1" aria-labelledby="addLineModalLabel" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addLineModalLabel">新規ライン追加</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addLineForm" hx-post="{% url 'manufacturing:line_master' %}" hx-target="#lineContent" hx-swap="innerHTML">
+                    {% csrf_token %}
+                    <input type="hidden" name="page" id="currentPage" value="{{ lines.number }}">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">ライン名</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="x_position" class="form-label">X座標</label>
+                            <input type="number" class="form-control" id="x_position" name="x_position" value="0" required>
+                        </div>
+                        <div class="col">
+                            <label for="y_position" class="form-label">Y座標</label>
+                            <input type="number" class="form-control" id="y_position" name="y_position" value="0" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <label for="width" class="form-label">幅</label>
+                            <input type="number" class="form-control" id="width" name="width" value="100" required>
+                        </div>
+                        <div class="col">
+                            <label for="height" class="form-label">高さ</label>
+                            <input type="number" class="form-control" id="height" name="height" value="100" required>
+                        </div>
+                    </div>
+                    <div class="mb-3 form-check">
+                        <input type="checkbox" class="form-check-input" id="active" name="active" checked>
+                        <label class="form-check-label" for="active">使用中</label>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.modal-backdrop {
+    opacity: 0.5 !important;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 新規追加フォームの処理
+    const addLineForm = document.getElementById('addLineForm');
+    if (addLineForm) {
+        // 現在のページ番号を取得して設定
+        const currentPage = document.querySelector('.pagination .active')?.textContent || '1';
+        document.getElementById('currentPage').value = currentPage;
+
+        addLineForm.addEventListener('htmx:afterRequest', function(event) {
+            try {
+                const response = JSON.parse(event.detail.xhr.response);
+                if (event.detail.successful) {
+                    // モーダルを閉じる
+                    const modalElement = document.getElementById('addLineModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+                    modal.hide();
+                    
+                    // フォームをリセット
+                    addLineForm.reset();
+                    
+                    // 成功メッセージを表示
+                    const toastElement = document.getElementById('successToast');
+                    if (toastElement) {
+                        const toast = new bootstrap.Toast(toastElement);
+                        const toastMessage = document.getElementById('toastMessage');
+                        if (toastMessage) {
+                            toastMessage.textContent = response.message;
+                        }
+                        toast.show();
+                    }
+
+                    // コンテンツを更新
+                    if (response.html) {
+                        const lineContent = document.getElementById('lineContent');
+                        if (lineContent) {
+                            lineContent.innerHTML = response.html;
+                        }
+                    }
+                } else {
+                    // エラーメッセージを表示
+                    const toastElement = document.getElementById('errorToast');
+                    if (toastElement) {
+                        const toast = new bootstrap.Toast(toastElement);
+                        const errorMessage = document.getElementById('errorMessage');
+                        if (errorMessage) {
+                            errorMessage.textContent = response.message;
+                        }
+                        toast.show();
+                    }
+                }
+            } catch (e) {
+                console.error('JSONの解析に失敗しました:', e);
+            }
+        });
+    }
+
+    // 編集フォームの処理
+    document.body.addEventListener('htmx:afterRequest', function(event) {
+        if (event.detail.target.id === 'lineContent') {
+            try {
+                const response = JSON.parse(event.detail.xhr.response);
+                if (event.detail.successful) {
+                    // 成功メッセージを表示
+                    const toastElement = document.getElementById('successToast');
+                    if (toastElement) {
+                        const toast = new bootstrap.Toast(toastElement);
+                        const toastMessage = document.getElementById('toastMessage');
+                        if (toastMessage) {
+                            toastMessage.textContent = response.message;
+                        }
+                        toast.show();
+                    }
+
+                    // コンテンツを更新
+                    if (response.html) {
+                        const lineContent = document.getElementById('lineContent');
+                        if (lineContent) {
+                            lineContent.innerHTML = response.html;
+                        }
+                    }
+                } else {
+                    // エラーメッセージを表示
+                    const toastElement = document.getElementById('errorToast');
+                    if (toastElement) {
+                        const toast = new bootstrap.Toast(toastElement);
+                        const errorMessage = document.getElementById('errorMessage');
+                        if (errorMessage) {
+                            errorMessage.textContent = response.message;
+                        }
+                        toast.show();
+                    }
+                }
+            } catch (e) {
+                console.error('JSONの解析に失敗しました:', e);
+            }
+        }
+    });
+});
+</script> 

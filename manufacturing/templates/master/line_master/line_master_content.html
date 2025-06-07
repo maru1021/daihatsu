@@ -1,0 +1,16 @@
+{% include 'master/line_master/line_header.html' %}
+<div class="card">
+    <div class="card-body">
+        {% if lines %}
+            {% include 'master/line_master/line_table.html' %}
+        {% else %}
+            <div class="text-center py-4">
+                {% if search_query %}
+                    <p class="text-muted mb-0">検索条件「{{ search_query }}」に一致するデータが見つかりませんでした。</p>
+                {% else %}
+                    <p class="text-muted mb-0">データが登録されていません。</p>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+</div> 
