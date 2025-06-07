@@ -1,0 +1,24 @@
+<!-- テーブルとページネーションをセットにしたテンプレート -->
+{% if lines %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                {% include 'master/line_master/line_table_header.html' %}
+            </thead>
+            <tbody id="lineTableBody">
+                {% for line in lines %}
+                {% include 'master/line_master/line_row.html' %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% include 'master/line_master/line_pagination.html' %}
+{% else %}
+    <div class="text-center py-4">
+        {% if search_query %}
+            <p class="text-muted mb-0">検索条件「{{ search_query }}」に一致するデータが見つかりませんでした。</p>
+        {% else %}
+            <p class="text-muted mb-0">データが登録されていません。</p>
+        {% endif %}
+    </div>
+{% endif %}

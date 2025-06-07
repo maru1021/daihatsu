@@ -11,4 +11,4 @@ urlpatterns = [
     path('machine-master/', views.MachineMasterView.as_view(), name='machine_master'),
     path('machine-master/edit/<int:pk>/', views.MachineEditView.as_view(), name='machine_edit'),
     path('machine-master/delete/<int:pk>/', views.MachineDeleteView.as_view(), name='machine_delete'),
-] 
+]

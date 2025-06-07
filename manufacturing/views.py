@@ -24,15 +24,31 @@ class LineMasterView(TemplateView):
     template_name = 'master/line_master/line_master.html'
 
     def get(self, request, *args, **kwargs):
-        if request.headers.get('HX-Request'):
-            if 'pk' in kwargs:
-                # 編集モーダルの内容を返す
-                line = get_object_or_404(Line, pk=kwargs['pk'])
-                context = {'line': line}
-                return render(request, 'master/line_master/line_edit_modal.html', context)
-            else:
-                # 一覧の内容を返す
-                self.template_name = 'master/line_master/line_master_content.html'
+        # HTMXリクエストの詳細判定
+        is_htmx = request.headers.get('HX-Request')
+        has_search_param = 'search' in request.GET  # 検索パラメータの存在（値が空でも）
+        has_page = request.GET.get('page') is not None
+        has_pk = 'pk' in kwargs
+        
+        # **重要**: User-AgentでJavaScriptからのリクエストかどうかを判定
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        is_browser_nav = 'mozilla' in user_agent or 'chrome' in user_agent or 'safari' in user_agent
+        
+        if is_htmx and has_pk:
+            # 編集モーダルの内容を返す
+            line = get_object_or_404(Line, pk=kwargs['pk'])
+            context = {'line': line}
+            return render(request, 'master/line_master/line_edit_modal.html', context)
+        elif is_htmx and (has_search_param or has_page):
+            # **修正**: 検索（値が空でも）やページネーション：テーブル+ページネーションのみ
+            context = self.get_context_data(**kwargs)
+            return render(request, 'master/line_master/line_table_with_pagination.html', context)
+        elif is_htmx and is_browser_nav:
+            # **HTMXサイドバーナビゲーション**: コンテンツ部分のみ（真のSPA）
+            context = self.get_context_data(**kwargs)
+            return render(request, 'master/line_master/line_master_content.html', context)
+        
+        # 直接アクセス、リロード、ブックマーク：完全なページを返す
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -69,74 +85,86 @@ class LineMasterView(TemplateView):
                 line.active = request.POST.get('active') == 'on'
                 line.save()
 
-                # 更新後のコンテンツ全体を返す
-                lines = Line.objects.all().order_by('id')
-                paginator = Paginator(lines, 10)
-                page_number = request.POST.get('page', 1)
-                page_obj = paginator.get_page(page_number)
+                # 更新後のテーブル+ページネーションを返す
+                context = self.get_context_data()
+                html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
                 
-                context = {
-                    'lines': page_obj,
-                    'form': LineForm(),
-                }
-                
-                response = JsonResponse({
+                return JsonResponse({
                     'status': 'success',
                     'message': 'ラインが正常に更新されました。',
-                    'html': render_to_string('master/line_master/line_master_content.html', context, request=request)
+                    'html': html
                 })
-                response['Content-Type'] = 'application/json'
-                return response
             except Exception as e:
-                response = JsonResponse({
+                return JsonResponse({
                     'status': 'error',
                     'message': f'エラーが発生しました: {str(e)}'
                 }, status=400)
-                response['Content-Type'] = 'application/json'
-                return response
         else:
             # 新規登録処理
             form = LineForm(request.POST)
             if form.is_valid():
                 form.save()
-                lines = Line.objects.all().order_by('id')
-                paginator = Paginator(lines, 10)
-                page_number = request.POST.get('page', 1)
-                page_obj = paginator.get_page(page_number)
                 
-                context = {
-                    'lines': page_obj,
-                    'form': LineForm(),
-                }
+                # 登録後のテーブル+ページネーションを返す
+                context = self.get_context_data()
+                html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
                 
-                response = JsonResponse({
+                return JsonResponse({
                     'status': 'success',
                     'message': 'ラインが正常に登録されました。',
-                    'html': render_to_string('master/line_master/line_master_content.html', context, request=request)
+                    'html': html
                 })
-                response['Content-Type'] = 'application/json'
-                return response
             else:
-                response = JsonResponse({
+                return JsonResponse({
                     'status': 'error',
                     'message': '入力内容に誤りがあります。',
                     'errors': form.errors
                 }, status=400)
-                response['Content-Type'] = 'application/json'
-                return response
+
+    def delete(self, request, *args, **kwargs):
+        try:
+            line = get_object_or_404(Line, pk=kwargs['pk'])
+            line.delete()
+            
+            # 削除後のテーブル+ページネーションを返す
+            context = self.get_context_data()
+            html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
+            
+            return JsonResponse({
+                'status': 'success',
+                'message': 'ラインが正常に削除されました。',
+                'html': html
+            })
+        except Exception as e:
+            return JsonResponse({
+                'status': 'error',
+                'message': f'エラーが発生しました: {str(e)}'
+            }, status=400)
 
 class MachineMasterView(TemplateView):
     template_name = 'master/machine_master/machine_master.html'
 
     def get(self, request, *args, **kwargs):
-        if request.headers.get('HX-Request'):
+        # 同じSPAロジックを適用
+        is_htmx = request.headers.get('HX-Request')
+        has_search_param = 'search' in request.GET
+        has_page = request.GET.get('page') is not None
+        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+        is_browser_nav = 'mozilla' in user_agent or 'chrome' in user_agent or 'safari' in user_agent
+        
+        if is_htmx and (has_search_param or has_page):
+            # 検索やページネーション用
             self.template_name = 'master/machine_master/machine_master_content.html'
+        elif is_htmx and is_browser_nav:
+            # サイドバーナビゲーション用
+            self.template_name = 'master/machine_master/machine_master_content.html'
+        
         return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         machine_list = Machine.objects.all().order_by('id')
-        paginator = Paginator(machine_list, 10)  # 1ページあたり10件表示
+        paginator = Paginator(machine_list, 10)
         page_number = self.request.GET.get('page', 1)
         try:
             page_number = int(page_number)
@@ -162,7 +190,6 @@ class MachineMasterView(TemplateView):
                 active=True
             )
 
-            # 更新後のコンテンツ全体を返す
             context = self.get_context_data()
             html = render_to_string('master/machine_master/machine_master_content.html', context)
             return JsonResponse({
@@ -198,20 +225,6 @@ class MachineCreateView(TemplateView):
         except Exception as e:
             return HttpResponse(f'エラーが発生しました: {str(e)}', status=400)
 
-class LineDeleteView(TemplateView):
-    def delete(self, request, *args, **kwargs):
-        try:
-            line = get_object_or_404(Line, pk=kwargs['pk'])
-            line.delete()
-            
-            # 削除後のコンテンツ全体を返す
-            context = self.get_context_data()
-            context['lines'] = Line.objects.all().order_by('id')
-            html = render_to_string('master/line_master/line_master_content.html', context)
-            return HttpResponse(html)
-        except Exception as e:
-            return HttpResponse(f'エラーが発生しました: {str(e)}', status=400)
-
 class MachineEditView(TemplateView):
     template_name = 'master/machine_master/machine_edit_modal.html'
 
@@ -237,7 +250,6 @@ class MachineEditView(TemplateView):
             machine.active = request.POST.get('active') == 'on'
             machine.save()
 
-            # 更新後のコンテンツ全体を返す
             context = self.get_context_data()
             context['machines'] = Machine.objects.all().order_by('id')
             context['lines'] = Line.objects.all().order_by('id')
@@ -260,7 +272,6 @@ class MachineDeleteView(TemplateView):
             machine = get_object_or_404(Machine, pk=kwargs['pk'])
             machine.delete()
 
-            # 削除後のコンテンツ全体を返す
             context = self.get_context_data()
             context['machines'] = Machine.objects.all().order_by('id')
             context['lines'] = Line.objects.all().order_by('id')

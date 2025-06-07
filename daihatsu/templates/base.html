@@ -131,11 +131,37 @@
         padding-left: 1.5rem;
       }
 
+      /* 横幅問題の強制修正 */
       .main-content {
-        margin-left: var(--sidebar-width);
-        padding: 2rem;
-        min-height: 100vh;
-        background-color: #f8f9fa;
+        margin-left: var(--sidebar-width) !important;
+        padding: 2rem !important;
+        min-height: 100vh !important;
+        background-color: #f8f9fa !important;
+        width: auto !important;
+        max-width: none !important;
+        box-sizing: border-box !important;
+      }
+
+      /* HTMXナビゲーション後のコンテナ問題修正 */
+      .main-content .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        max-width: none !important;
+        width: 100% !important;
+      }
+
+      /* カード要素の幅調整 */
+      .main-content .card {
+        width: 100% !important;
+        max-width: none !important;
+      }
+
+      /* テーブルコンテナの幅調整 */
+      .main-content .table-responsive {
+        width: 100% !important;
+        max-width: none !important;
       }
 
       .nav-item {
@@ -254,6 +280,7 @@
           saveCurrentDOMState();
         });
 
+        // **重要な修正**: ナビゲーションリンクの処理
         $(".nav-link:not([data-bs-toggle])").each((i, el) => {
           const $el = $(el);
           const href = $el.attr("href");
@@ -266,6 +293,7 @@
             $el.attr({
               "hx-get": href,
               "hx-target": ".main-content",
+              "hx-swap": "innerHTML",
               "hx-push-url": "true",
             });
           }
@@ -277,15 +305,32 @@
             $trigger.hasClass("nav-link") &&
             !$trigger.attr("data-bs-toggle")
           ) {
+            // サイドバー状態を保存
             saveCurrentDOMState();
           }
         });
 
-        $(document).on("htmx:afterSwap", function () {
-          setTimeout(() => {
-            restoreStates();
-            forceColors();
-          }, 100);
+        // **重要な修正**: afterSwap後の処理を改善
+        $(document).on("htmx:afterSwap", function (evt) {
+          if ($(evt.detail.target).hasClass("main-content")) {
+            // サイドバー状態を復元
+            setTimeout(() => {
+              restoreStates();
+              forceColors();
+              
+              // **追加**: コンテンツ幅の強制調整
+              const $mainContent = $(".main-content");
+              $mainContent.css({
+                "margin-left": "280px", // var(--sidebar-width)と同じ値
+                "padding": "2rem",
+                "min-height": "100vh",
+                "background-color": "#f8f9fa",
+                "width": "auto",
+                "max-width": "none",
+                "box-sizing": "border-box"
+              });
+            }, 100);
+          }
         });
 
         setTimeout(() => {
@@ -307,5 +352,6 @@
         setInterval(forceColors, 5000);
       });
     </script>
+    {% block extra_js %}{% endblock %}
   </body>
 </html>
