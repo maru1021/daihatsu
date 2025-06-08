@@ -37,15 +37,15 @@
                     <td>
                         <div class="btn-group" role="group">
                             <button type="button" 
-                                    class="btn btn-sm btn-outline-primary edit-line" 
-                                    data-line-id="{{ line.id }}"
+                                    class="btn btn-sm btn-outline-primary edit-item" 
+                                    data-item-id="{{ line.id }}"
                                     data-edit-url="{% url 'manufacturing:line_master_pk' pk=line.id %}">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button type="button" 
-                                    class="btn btn-sm btn-outline-danger delete-line" 
-                                    data-line-id="{{ line.id }}"
-                                    data-line-name="{{ line.name }}"
+                                    class="btn btn-sm btn-outline-danger delete-item" 
+                                    data-item-id="{{ line.id }}"
+                                    data-item-name="{{ line.name }}"
                                     data-delete-url="{% url 'manufacturing:line_delete' pk=line.id %}">
                                 <i class="fas fa-trash"></i>
                             </button>

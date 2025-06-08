@@ -7,27 +7,27 @@
 
 {% block content %}
 <!-- ヘッダー部分：検索とボタン -->
-{% include "components/table/header.html" with title="ライン管理" search_placeholder="検索..." search_url=request.path search_query=search_query add_button_text="新規ライン追加" add_button_target="lineFormModal" %}
+{% include "components/table/header.html" with title="ライン管理" search_placeholder="検索..." search_url=request.path search_query=search_query add_button_text="新規ライン追加" add_button_target="RegisterModal" %}
 
 <!-- コンテンツエリア -->
 <div class="card">
     <div class="card-body">
-        <div id="lineTableContainer">
+        <div id="TableContainer">
             {% include 'master/line_master/line_table_with_pagination.html' %}
         </div>
     </div>
 </div>
 
 <!-- 新規追加モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="lineFormModal" modal_title="新規ライン追加" form_id="lineForm" form_action_url=form_action_url form_template="master/line_master/forms/line_form_fields.html" submit_text="登録" %}
+{% include "components/modal/generic_crud_modal.html" with modal_id="RegisterModal" modal_title="新規ライン追加" form_id="RegisterForm" form_action_url=form_action_url form_template="master/line_master/forms/form_fields.html" submit_text="登録" %}
 
 <!-- 編集モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="lineEditModal" modal_title="ライン編集" form_id="lineEditForm" form_action_url=form_action_url form_template="master/line_master/forms/line_form_fields.html" submit_text="更新" %}
+{% include "components/modal/generic_crud_modal.html" with modal_id="EditModal" modal_title="ライン編集" form_id="EditForm" form_action_url=form_action_url form_template="master/line_master/forms/form_fields.html" submit_text="更新" %}
 
 <!-- 削除確認モーダル -->
-{% include "components/modal/generic_delete_modal.html" with modal_id="lineDeleteModal" title="ライン削除の確認" message="本当に" confirm_button_text="削除" %}
+{% include "components/modal/generic_delete_modal.html" with modal_id="DeleteModal" title="ライン削除の確認" message="本当に" confirm_button_text="削除" %}
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/line_master.js' %}"></script>
+<script type="module" src="{% static 'js/table_master.js' %}"></script>
 {% endblock %}

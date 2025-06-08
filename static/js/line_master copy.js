@@ -463,7 +463,6 @@ if (document.readyState === 'loading') {
     // DOMContentLoadedイベントで処理
 } else {
     if (!lineMasterInitialized) {
-        console.log('即座初期化（complete）: ライン管理ページ');
         initializeLineMasterPage();
         lineMasterInitialized = true;
     }
