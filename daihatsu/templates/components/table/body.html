@@ -1,0 +1,49 @@
+{% load common_extras %}
+
+{% comment %}
+汎用的なテーブルボディコンポーネント
+
+パラメータ:
+- items: 表示するアイテムのリスト
+- fields: 表示するフィールドのリスト
+- edit_url_name: 編集URLの名前
+- delete_url_name: 削除URLの名前
+- item_name_field: アイテム名のフィールド名
+{% endcomment %}
+
+<tbody>
+    {% for item in items %}
+    <tr>
+        {% for field in fields %}
+        <td>
+            {% if field == 'active' %}
+                {% if item.active %}
+                    <span class="badge bg-success">有効</span>
+                {% else %}
+                    <span class="badge bg-secondary">無効</span>
+                {% endif %}
+            {% else %}
+                {{ item|getattr:field|default:'' }}
+            {% endif %}
+        </td>
+        {% endfor %}
+        <td>
+            <div class="btn-group" role="group">
+                <button type="button" 
+                        class="btn btn-sm btn-outline-primary edit-item" 
+                        data-item-id="{{ item.id }}"
+                        data-edit-url="{% url edit_url_name pk=item.id %}">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button type="button" 
+                        class="btn btn-sm btn-outline-danger delete-item" 
+                        data-item-id="{{ item.id }}"
+                        data-item-name="{{ item|getattr:item_name_field|default:'' }}"
+                        data-delete-url="{% url delete_url_name pk=item.id %}">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody> 

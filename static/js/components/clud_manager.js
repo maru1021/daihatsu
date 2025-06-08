@@ -26,8 +26,6 @@ class CrudManager {
   initialize() {
       if (this.isInitialized) return;
       
-      console.log(`${this.config.entityName}CRUD管理初期化開始`);
-      
       this.cleanupModals();
       this.initializeCreateForm();
       this.initializePagination();
@@ -35,7 +33,6 @@ class CrudManager {
       this.initializeTableEvents();
       
       this.isInitialized = true;
-      console.log(`${this.config.entityName}CRUD管理初期化完了`);
   }
 
   /**
@@ -405,8 +402,6 @@ class CrudManager {
   showToast(type, message) {
       if (typeof showToast === 'function') {
           showToast(type, message);
-      } else {
-          console.log(`${type}: ${message}`);
       }
   }
 }

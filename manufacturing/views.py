@@ -29,38 +29,38 @@ class LineMasterView(TemplateView):
       has_page = request.GET.get('page') is not None
       has_pk = 'pk' in kwargs
       
-      # デバッグ情報
-      print(f"=== LineMasterView Debug ===")
-      print(f"is_htmx: {is_htmx}")
-      print(f"has_search_param: {has_search_param}")
-      print(f"has_page: {has_page}")
-      print(f"has_pk: {has_pk}")
-      print(f"request.GET: {request.GET}")
-      print(f"request.headers HX-Request: {request.headers.get('HX-Request')}")
-      print(f"request.path: {request.path}")
-      print(f"kwargs: {kwargs}")
-      
       if has_pk:
-          # 編集モーダルの内容を返す
-          print("=> Returning edit modal")
           line = get_object_or_404(Line, pk=kwargs['pk'])
+          
           from django.urls import reverse
           edit_url = reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']})
-          context = {'line': line, 'edit_url': edit_url}
-          return render(request, 'master/line_master/line_edit_modal.html', context)
+          
+          # ラインの情報をJSONで返す
+          response_data = {
+              'status': 'success',
+              'line': {
+                  'id': line.id,
+                  'name': line.name,
+                  'x_position': line.x_position,
+                  'y_position': line.y_position,
+                  'width': line.width,
+                  'height': line.height,
+                  'active': line.active
+              },
+              'edit_url': edit_url
+          }
+          
+          return JsonResponse(response_data)
       elif is_htmx and (has_search_param or has_page):
           # 検索やページネーション：テーブル+ページネーションのみを返す
-          print("=> Returning table only (pagination/search)")
           context = self.get_context_data(**kwargs)
           return render(request, 'master/line_master/line_table_with_pagination.html', context)
       elif is_htmx:
           # その他のHTMXリクエスト：コンテンツ部分のみ
-          print("=> Returning content only (other HTMX)")
           context = self.get_context_data(**kwargs)
           return render(request, 'master/line_master/line_master_content.html', context)
       
       # 直接アクセス：完全なページを返す
-      print("=> Returning full page (direct access)")
       self.template_name = 'master/line_master/line_master.html'
       return super().get(request, *args, **kwargs)
 
@@ -99,42 +99,26 @@ class LineMasterView(TemplateView):
         current_page = request.POST.get('current_page') or request.GET.get('page', '1')
         search_query = request.POST.get('search_query') or request.GET.get('search', '')
         
-        print(f"=== get_preserved_context ===")
-        print(f"POST data: {dict(request.POST)}")
-        print(f"GET data: {dict(request.GET)}")
-        print(f"受信したページ情報 - page: {current_page}, search: {search_query}")
-        
         lines = Line.objects.all().order_by('id')
         
         # 検索処理
         if search_query:
             lines = lines.filter(name__icontains=search_query)
-            print(f"検索結果: {lines.count()}件")
         
         paginator = Paginator(lines, 10)
-        print(f"総ページ数: {paginator.num_pages}, 1ページあたり10件")
         
         # ページ番号を整数に変換し、範囲をチェック
         try:
             page_number = int(current_page)
-            print(f"リクエストされたページ番号: {page_number}")
             
             if page_number > paginator.num_pages:
                 page_number = paginator.num_pages
-                print(f"ページ番号を最大値に調整: {current_page} -> {page_number}")
             elif page_number < 1:
                 page_number = 1
-                print(f"ページ番号を最小値に調整: {current_page} -> {page_number}")
-            else:
-                print(f"ページ番号は有効範囲内: {page_number}")
         except (ValueError, TypeError):
             page_number = 1
-            print(f"無効なページ番号、1に設定: {current_page} -> {page_number}")
         
         page_obj = paginator.get_page(page_number)
-        print(f"返すページ番号: {page_obj.number}")
-        print(f"このページのアイテム数: {len(page_obj.object_list)}")
-        print(f"総アイテム数: {paginator.count}")
         
         from django.urls import reverse
         
@@ -146,10 +130,6 @@ class LineMasterView(TemplateView):
         }
 
     def post(self, request, *args, **kwargs):
-        print(f"=== POST Request Debug ===")
-        print(f"POST data: {dict(request.POST)}")
-        print(f"kwargs: {kwargs}")
-        
         if 'pk' in kwargs:
             # 編集処理
             try:
@@ -162,8 +142,6 @@ class LineMasterView(TemplateView):
                 line.active = request.POST.get('active') == 'on'
                 line.save()
                 
-                print("編集処理完了")
-
                 # 現在のページ情報を保持してコンテキストを生成
                 context = self.get_preserved_context(request)
                 html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
@@ -174,7 +152,6 @@ class LineMasterView(TemplateView):
                     'html': html
                 })
             except Exception as e:
-                print(f"編集処理エラー: {e}")
                 return JsonResponse({
                     'status': 'error',
                     'message': f'エラーが発生しました: {str(e)}'
@@ -184,7 +161,6 @@ class LineMasterView(TemplateView):
             form = LineForm(request.POST)
             if form.is_valid():
                 form.save()
-                print("新規登録処理完了")
                 
                 # 現在のページ情報を保持してコンテキストを生成
                 context = self.get_preserved_context(request)
@@ -196,7 +172,6 @@ class LineMasterView(TemplateView):
                     'html': html
                 })
             else:
-                print(f"フォームバリデーションエラー: {form.errors}")
                 return JsonResponse({
                     'status': 'error',
                     'message': '入力内容に誤りがあります。',
@@ -205,12 +180,6 @@ class LineMasterView(TemplateView):
 
     def delete(self, request, *args, **kwargs):
         try:
-            print(f"=== DELETE Request Debug ===")
-            print(f"Request URL: {request.get_full_path()}")
-            print(f"GET params: {dict(request.GET)}")
-            print(f"POST data: {dict(request.POST)}")
-            print(f"Request method: {request.method}")
-            
             line = get_object_or_404(Line, pk=kwargs['pk'])
             line.delete()
             
@@ -218,24 +187,18 @@ class LineMasterView(TemplateView):
             current_page = request.GET.get('current_page')
             search_query = request.GET.get('search_query')
             
-            print(f"GETパラメータ取得結果 - page: {current_page}, search: {search_query}")
-            
             # GETパラメータがない場合は、通常のGETパラメータをチェック
             if not current_page:
                 current_page = request.GET.get('page', '1')
-                print(f"通常のpageパラメータから取得: {current_page}")
             
             if search_query is None:
                 search_query = request.GET.get('search', '')
-                print(f"通常のsearchパラメータから取得: {search_query}")
             
             # デフォルト値の設定
             if not current_page:
                 current_page = '1'
             if search_query is None:
                 search_query = ''
-            
-            print(f"最終的なページ情報 - page: {current_page}, search: {search_query}")
             
             # 一時的にPOSTデータとして設定（get_preserved_contextで使用）
             from django.http import QueryDict
@@ -253,9 +216,6 @@ class LineMasterView(TemplateView):
                 'html': html
             })
         except Exception as e:
-            print(f"削除処理エラー: {e}")
-            import traceback
-            traceback.print_exc()
             return JsonResponse({
                 'status': 'error',
                 'message': f'エラーが発生しました: {str(e)}'

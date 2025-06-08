@@ -39,8 +39,6 @@ function getCurrentPageInfo() {
     if (searchInput && urlSearch === null) {
         currentSearch = searchInput.value || '';
     }
-    
-    console.log('現在のページ情報:', { page: currentPage, search: currentSearch });
     return {
         page: currentPage,
         search: currentSearch
@@ -49,8 +47,6 @@ function getCurrentPageInfo() {
 
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
 function initializeLineMasterPage() {
-    console.log('ライン管理ページ初期化開始');
-    
     // 残ったモーダルオーバーレイをクリーンアップ
     const existingBackdrops = document.querySelectorAll('.modal-backdrop');
     existingBackdrops.forEach(backdrop => backdrop.remove());
@@ -128,8 +124,6 @@ function initializeLineMasterPage() {
 
     // 編集・削除ボタンのクリックイベント
     initializeTableEvents();
-
-    console.log('ライン管理ページ初期化完了');
 }
 
 // フォームリセット関数
@@ -156,7 +150,6 @@ function initializePaginationEvents() {
             link.addEventListener('click', function(e) {
                 e.preventDefault();
                 const url = this.href;
-                console.log('ページネーションクリック:', url);
                 
                 // URLを更新してからHTMXリクエストを送信
                 window.history.pushState({}, '', url);
@@ -217,8 +210,6 @@ function initializeTableEvents() {
     if (document.body._lineEventsInitialized) return;
     document.body._lineEventsInitialized = true;
     
-    console.log('テーブルイベント初期化');
-    
     document.addEventListener('click', function(e) {
         // 編集ボタンの処理
         const editBtn = e.target.closest('.edit-line');
@@ -243,39 +234,53 @@ function handleEditLine(e, editBtn) {
     const lineId = editBtn.getAttribute('data-line-id');
     const editUrl = editBtn.getAttribute('data-edit-url') || `/manufacturing/line-master/edit/${lineId}/`;
     
-    fetch(editUrl, {
-        headers: { 'HX-Request': 'true' }
-    })
-    .then(response => response.text())
-    .then(html => {
-        const modal = document.getElementById('lineEditModal');
-        const existingModal = bootstrap.Modal.getInstance(modal);
-        if (existingModal) existingModal.dispose();
-        
-        const existingBackdrops = document.querySelectorAll('.modal-backdrop');
-        existingBackdrops.forEach(backdrop => backdrop.remove());
-        
-        modal.querySelector('.modal-content').innerHTML = html;
-        const bsModal = new bootstrap.Modal(modal);
-        
-        modal.addEventListener('hidden.bs.modal', function() {
-            cleanupModals();
-        }, { once: true });
-        
-        bsModal.show();
-        
-        // 編集フォームの送信処理
-        const editForm = modal.querySelector('form');
-        if (editForm) {
-            editForm.addEventListener('submit', function(e) {
-                handleEditFormSubmit(e, editForm, bsModal);
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        showToast('error', '編集画面の読み込みに失敗しました。');
-    });
+    // サーバーからラインの情報を取得
+    fetch(editUrl)
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 編集モーダルを表示
+                const editModal = document.getElementById('lineEditModal');
+                if (editModal) {
+                    const modal = new bootstrap.Modal(editModal);
+                    
+                    // フォームのaction属性を設定
+                    const form = editModal.querySelector('form');
+                    if (form) {
+                        form.action = editUrl;
+                        
+                        // フォームの各フィールドに値を設定
+                        const nameField = form.querySelector('[name="name"]');
+                        const xPosField = form.querySelector('[name="x_position"]');
+                        const yPosField = form.querySelector('[name="y_position"]');
+                        const widthField = form.querySelector('[name="width"]');
+                        const heightField = form.querySelector('[name="height"]');
+                        const activeField = form.querySelector('[name="active"]');
+                        
+                        nameField.value = data.line.name;
+                        xPosField.value = data.line.x_position;
+                        yPosField.value = data.line.y_position;
+                        widthField.value = data.line.width;
+                        heightField.value = data.line.height;
+                        activeField.checked = data.line.active;
+                    }
+                    
+                    modal.show();
+                    
+                    // 編集フォームの送信処理
+                    if (form) {
+                        form.addEventListener('submit', function(e) {
+                            handleEditFormSubmit(e, form, modal);
+                        });
+                    }
+                }
+            } else {
+                showToast('エラー', 'ラインの情報を取得できませんでした。', 'error');
+            }
+        })
+        .catch(error => {
+            showToast('エラー', 'ラインの情報を取得できませんでした。', 'error');
+        });
 }
 
 // 編集フォーム送信処理
@@ -324,9 +329,6 @@ function handleDeleteLine(e, deleteBtn) {
     const lineName = deleteBtn.getAttribute('data-line-name');
     const deleteUrl = deleteBtn.getAttribute('data-delete-url') || `/manufacturing/line-master/delete/${lineId}/`;
     
-    console.log('削除ボタンクリック');
-    console.log('削除URL:', deleteUrl);
-    
     const modalHtml = `
         <div class="modal fade" id="deleteLineModal${lineId}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -373,14 +375,11 @@ function handleDeleteLine(e, deleteBtn) {
         deleteConfirmBtn.addEventListener('click', function() {
             // 現在のページ情報を取得
             const pageInfo = getCurrentPageInfo();
-            console.log('削除実行時のページ情報:', pageInfo);
             
             // URLパラメータとして送信
             const deleteUrlObj = new URL(deleteUrl, window.location.origin);
             deleteUrlObj.searchParams.set('current_page', pageInfo.page);
             deleteUrlObj.searchParams.set('search_query', pageInfo.search);
-            
-            console.log('削除URL（パラメータ付き）:', deleteUrlObj.toString());
             
             performDelete(lineId, deleteUrlObj.toString(), bsModal);
         });
@@ -428,7 +427,6 @@ function cleanupModals() {
 // DOMContentLoaded時の初期化
 document.addEventListener('DOMContentLoaded', function() {
     if (!lineMasterInitialized) {
-        console.log('DOMContentLoaded: ライン管理ページを初期化');
         initializeLineMasterPage();
         lineMasterInitialized = true;
     }
@@ -438,8 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
 let htmxInitTimeout = null;
 document.addEventListener('htmx:afterSwap', function(evt) {
     if (evt.detail.target.classList.contains('main-content')) {
-        console.log('HTMX afterSwap: ライン管理ページを再初期化');
-        
         // 前のタイマーをクリア
         if (htmxInitTimeout) {
             clearTimeout(htmxInitTimeout);
@@ -457,11 +453,8 @@ document.addEventListener('htmx:afterSwap', function(evt) {
 // 手動初期化用（line_master_content.htmlから呼び出される）
 window.initializeLineMasterPageManual = function() {
     if (!lineMasterInitialized) {
-        console.log('手動初期化: ライン管理ページ');
         initializeLineMasterPage();
         lineMasterInitialized = true;
-    } else {
-        console.log('手動初期化: 既に初期化済みのためスキップ');
     }
 };
 

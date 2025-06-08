@@ -7,7 +7,7 @@
 
 {% block content %}
 <!-- ヘッダー部分：検索とボタン -->
-{% include 'master/line_master/line_header.html' %}
+{% include "components/table/header.html" with title="ライン管理" search_placeholder="検索..." search_url=request.path search_query=search_query add_button_text="新規ライン追加" add_button_target="lineFormModal" %}
 
 <!-- コンテンツエリア -->
 <div class="card">
@@ -18,17 +18,14 @@
     </div>
 </div>
 
-<!-- 新規追加モーダル（汎用コンポーネント使用） -->
-{% form_modal modal_id="lineFormModal" modal_title="新規ライン追加" form_id="lineForm" form_action_url=form_action_url form_template="master/line_master/forms/line_form_fields.html" submit_text="登録" %}
+<!-- 新規追加モーダル -->
+{% include "components/modal/generic_crud_modal.html" with modal_id="lineFormModal" modal_title="新規ライン追加" form_id="lineForm" form_action_url=form_action_url form_template="master/line_master/forms/line_form_fields.html" submit_text="登録" %}
 
 <!-- 編集モーダル -->
-<div class="modal fade" id="lineEditModal" tabindex="-1" aria-labelledby="lineEditModalLabel" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <!-- モーダルの内容はAjaxで動的に読み込まれます -->
-        </div>
-    </div>
-</div>
+{% include "components/modal/generic_crud_modal.html" with modal_id="lineEditModal" modal_title="ライン編集" form_id="lineEditForm" form_action_url=form_action_url form_template="master/line_master/forms/line_form_fields.html" submit_text="更新" %}
+
+<!-- 削除確認モーダル -->
+{% include "components/modal/generic_delete_modal.html" with modal_id="lineDeleteModal" title="ライン削除の確認" message="本当に" confirm_button_text="削除" %}
 {% endblock %}
 
 {% block extra_js %}

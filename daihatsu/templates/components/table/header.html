@@ -1,0 +1,52 @@
+{% comment %}
+汎用的なテーブルヘッダーコンポーネント
+
+パラメータ:
+- title: ページタイトル
+- search_placeholder: 検索ボックスのプレースホルダー
+- search_url: 検索URL
+- search_query: 現在の検索クエリ
+- add_button_text: 新規追加ボタンのテキスト
+- add_button_target: 新規追加モーダルのID
+- columns: カラム名のリスト
+{% endcomment %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{{ title|default:"一覧" }}</h1>
+    <div class="d-flex gap-2">
+        {% if search_url %}
+        <!-- 検索フォーム -->
+        <form class="d-flex">
+            <div class="input-group">
+                <input type="text" 
+                       class="form-control" 
+                       name="search" 
+                       placeholder="{{ search_placeholder|default:'検索...' }}" 
+                       value="{{ search_query }}"
+                       data-search-url="{{ search_url }}">
+                <button class="btn btn-outline-secondary" type="button">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </form>
+        {% endif %}
+        
+        {% if add_button_text and add_button_target %}
+        <!-- 新規追加ボタン -->
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ add_button_target }}">
+            <i class="fas fa-plus"></i> {{ add_button_text }}
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<thead>
+    <tr>
+        {% for column in columns %}
+        <th>{{ column }}</th>
+        {% endfor %}
+        {% if show_actions %}
+        <th>操作</th>
+        {% endif %}
+    </tr>
+</thead> 

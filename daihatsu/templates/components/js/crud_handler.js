@@ -23,8 +23,6 @@ class CrudHandler {
     initialize() {
         if (this.isInitialized) return;
         
-        console.log(`${this.config.entityName}管理ページ初期化開始`);
-        
         // モーダルオーバーレイクリーンアップ
         this.cleanupModals();
         
@@ -41,7 +39,6 @@ class CrudHandler {
         this.initializeSearch();
         
         this.isInitialized = true;
-        console.log(`${this.config.entityName}管理ページ初期化完了`);
     }
 
     cleanupModals() {
@@ -333,8 +330,6 @@ class CrudHandler {
     showToast(type, message) {
         if (typeof showToast === 'function') {
             showToast(type, message);
-        } else {
-            console.log(`${type}: ${message}`);
         }
     }
 }

@@ -350,14 +350,8 @@
               setTimeout(() => {
                 // ライン管理ページの場合
                 if (typeof window.initializeLineMasterContent === 'function') {
-                  console.log('HTMXナビゲーション後: ライン管理ページ初期化');
                   window.initializeLineMasterContent();
                 }
-                
-                // 他のページ用の初期化関数もここに追加可能
-                // if (typeof window.initializeOtherPageContent === 'function') {
-                //   window.initializeOtherPageContent();
-                // }
               }, 200);
             }, 100);
           }
