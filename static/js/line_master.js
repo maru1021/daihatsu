@@ -158,6 +158,9 @@ function initializePaginationEvents() {
                 const url = this.href;
                 console.log('ページネーションクリック:', url);
                 
+                // URLを更新してからHTMXリクエストを送信
+                window.history.pushState({}, '', url);
+                
                 fetch(url, {
                     headers: { 'HX-Request': 'true' }
                 })
@@ -189,6 +192,9 @@ function initializeSearchForm() {
             const url = new URL(searchUrl, window.location.origin);
             url.searchParams.set('search', searchQuery);
             url.searchParams.set('page', '1'); // 検索時は1ページ目
+            
+            // URLを更新してからHTMXリクエストを送信
+            window.history.pushState({}, '', url.pathname + url.search);
             
             fetch(url, {
                 headers: { 'HX-Request': 'true' }
