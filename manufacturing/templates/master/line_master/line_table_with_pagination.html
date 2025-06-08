@@ -1,6 +1,10 @@
 <!-- master/line_master/line_table_with_pagination.html - 修正版 -->
 {% load modal_tags %}
 
+<!-- ページ情報を保持する隠し要素 -->
+<input type="hidden" id="currentPageNumber" value="{{ lines.number|default:'1' }}">
+<input type="hidden" id="currentSearchQuery" value="{{ search_query|default:'' }}">
+
 {% if lines %}
     <div class="table-responsive">
         <table class="table table-hover">
@@ -55,8 +59,8 @@
 
     <!-- ページネーション（JavaScript処理） -->
     {% if lines.has_other_pages %}
-    <nav aria-label="ページネーション">
-        <ul class="pagination justify-content-center">
+    <nav aria-label="ページネーション" class="d-flex justify-content-end mt-3">
+        <ul class="pagination">
             {% if lines.has_previous %}
                 <li class="page-item">
                     <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">最初</a>

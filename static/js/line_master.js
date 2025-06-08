@@ -1,9 +1,51 @@
 /**
- * ライン管理ページのJavaScript - 修正版
+ * ライン管理ページのJavaScript - ページ保持対応版
  */
 
 // グローバル変数
 let lineMasterInitialized = false;
+
+// 現在のページ情報を取得する関数
+function getCurrentPageInfo() {
+    let currentPage = '1';
+    let currentSearch = '';
+    
+    // URLパラメータから取得
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlPage = urlParams.get('page');
+    const urlSearch = urlParams.get('search');
+    
+    if (urlPage) {
+        currentPage = urlPage;
+    }
+    
+    if (urlSearch !== null) {
+        currentSearch = urlSearch;
+    }
+    
+    // アクティブなページネーション要素から取得（URLが無い場合）
+    if (!urlPage) {
+        const activePageElement = document.querySelector('.pagination .page-item.active .page-link');
+        if (activePageElement) {
+            const pageFromDOM = activePageElement.textContent.trim();
+            if (pageFromDOM && !isNaN(pageFromDOM)) {
+                currentPage = pageFromDOM;
+            }
+        }
+    }
+    
+    // 検索入力フィールドから取得
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput && urlSearch === null) {
+        currentSearch = searchInput.value || '';
+    }
+    
+    console.log('現在のページ情報:', { page: currentPage, search: currentSearch });
+    return {
+        page: currentPage,
+        search: currentSearch
+    };
+}
 
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
 function initializeLineMasterPage() {
@@ -29,7 +71,10 @@ function initializeLineMasterPage() {
         lineForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
+            const pageInfo = getCurrentPageInfo();
             const formData = new FormData(lineForm);
+            formData.append('current_page', pageInfo.page);
+            formData.append('search_query', pageInfo.search);
             
             // URLを動的に取得
             const createUrl = lineForm.getAttribute('data-create-url') || '/manufacturing/line-master/';
@@ -62,11 +107,7 @@ function initializeLineMasterPage() {
                     
                     if (data.html) {
                         document.getElementById('lineTableContainer').innerHTML = data.html;
-                        // 再初期化
-                        setTimeout(() => {
-                            initializePaginationEvents();
-                            initializeTableEvents();
-                        }, 100);
+                        initializePaginationEvents();
                     }
                 } else {
                     showToast('error', data.message);
@@ -109,37 +150,28 @@ function resetLineForm(form) {
 
 // ページネーションのイベント初期化
 function initializePaginationEvents() {
-    // 既存のページネーションイベントを削除
     document.querySelectorAll('.pagination a').forEach(link => {
-        const newLink = link.cloneNode(true);
-        link.parentNode.replaceChild(newLink, link);
-    });
-    
-    // 新しいページネーションイベントを追加
-    document.querySelectorAll('.pagination a').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const url = this.href;
-            
-            console.log('ページネーションクリック:', url);
-            
-            fetch(url, {
-                headers: { 'HX-Request': 'true' }
-            })
-            .then(response => response.text())
-            .then(html => {
-                document.getElementById('lineTableContainer').innerHTML = html;
-                // 再初期化
-                setTimeout(() => {
+        if (!link._paginationInitialized) {
+            link._paginationInitialized = true;
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.href;
+                console.log('ページネーションクリック:', url);
+                
+                fetch(url, {
+                    headers: { 'HX-Request': 'true' }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    document.getElementById('lineTableContainer').innerHTML = html;
                     initializePaginationEvents();
-                    initializeTableEvents();
-                }, 100);
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'ページの読み込みに失敗しました。');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('error', 'ページの読み込みに失敗しました。');
+                });
             });
-        });
+        }
     });
 }
 
@@ -148,61 +180,52 @@ function initializeSearchForm() {
     const searchInput = document.querySelector('input[name="search"]');
     if (searchInput && !searchInput._searchInitialized) {
         searchInput._searchInitialized = true;
-        let searchTimeout;
         
         // URLを動的に取得
         const searchUrl = searchInput.getAttribute('data-search-url') || '/manufacturing/line-master/';
         
         searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const searchQuery = this.value;
-                const url = new URL(searchUrl, window.location.origin);
-                url.searchParams.set('search', searchQuery);
-                
-                fetch(url, {
-                    headers: { 'HX-Request': 'true' }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('lineTableContainer').innerHTML = html;
-                    // 再初期化
-                    setTimeout(() => {
-                        initializePaginationEvents();
-                        initializeTableEvents();
-                    }, 100);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', '検索に失敗しました。');
-                });
-            }, 500);
+            const searchQuery = this.value;
+            const url = new URL(searchUrl, window.location.origin);
+            url.searchParams.set('search', searchQuery);
+            url.searchParams.set('page', '1'); // 検索時は1ページ目
+            
+            fetch(url, {
+                headers: { 'HX-Request': 'true' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('lineTableContainer').innerHTML = html;
+                initializePaginationEvents();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', '検索に失敗しました。');
+            });
         });
     }
 }
 
 // テーブルイベント（編集・削除）の初期化
 function initializeTableEvents() {
+    if (document.body._lineEventsInitialized) return;
+    document.body._lineEventsInitialized = true;
+    
     console.log('テーブルイベント初期化');
     
-    // 既存の編集ボタンイベントを削除して新しく追加
-    document.querySelectorAll('.edit-line').forEach(btn => {
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
+    document.addEventListener('click', function(e) {
+        // 編集ボタンの処理
+        const editBtn = e.target.closest('.edit-line');
+        if (editBtn) {
+            handleEditLine(e, editBtn);
+            return;
+        }
         
-        newBtn.addEventListener('click', function(e) {
-            handleEditLine(e, this);
-        });
-    });
-    
-    // 既存の削除ボタンイベントを削除して新しく追加
-    document.querySelectorAll('.delete-line').forEach(btn => {
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        
-        newBtn.addEventListener('click', function(e) {
-            handleDeleteLine(e, this);
-        });
+        // 削除ボタンの処理
+        const deleteBtn = e.target.closest('.delete-line');
+        if (deleteBtn) {
+            handleDeleteLine(e, deleteBtn);
+        }
     });
 }
 
@@ -211,12 +234,8 @@ function handleEditLine(e, editBtn) {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('編集ボタンクリック');
-    
     const lineId = editBtn.getAttribute('data-line-id');
-    const editUrl = editBtn.getAttribute('data-edit-url') || `/manufacturing/line-master/${lineId}/`;
-    
-    console.log('編集URL:', editUrl);
+    const editUrl = editBtn.getAttribute('data-edit-url') || `/manufacturing/line-master/edit/${lineId}/`;
     
     fetch(editUrl, {
         headers: { 'HX-Request': 'true' }
@@ -224,27 +243,19 @@ function handleEditLine(e, editBtn) {
     .then(response => response.text())
     .then(html => {
         const modal = document.getElementById('lineEditModal');
-        
-        // 既存のモーダルインスタンスを削除
         const existingModal = bootstrap.Modal.getInstance(modal);
         if (existingModal) existingModal.dispose();
         
-        // 既存のバックドロップを削除
         const existingBackdrops = document.querySelectorAll('.modal-backdrop');
         existingBackdrops.forEach(backdrop => backdrop.remove());
         
-        // モーダルコンテンツを更新
         modal.querySelector('.modal-content').innerHTML = html;
-        
-        // 新しいモーダルインスタンスを作成
         const bsModal = new bootstrap.Modal(modal);
         
-        // モーダル非表示時のクリーンアップ
         modal.addEventListener('hidden.bs.modal', function() {
             cleanupModals();
         }, { once: true });
         
-        // モーダルを表示
         bsModal.show();
         
         // 編集フォームの送信処理
@@ -265,7 +276,10 @@ function handleEditLine(e, editBtn) {
 function handleEditFormSubmit(e, editForm, bsModal) {
     e.preventDefault();
     
+    const pageInfo = getCurrentPageInfo();
     const formData = new FormData(editForm);
+    formData.append('current_page', pageInfo.page);
+    formData.append('search_query', pageInfo.search);
     
     fetch(editForm.action, {
         method: 'POST',
@@ -283,11 +297,7 @@ function handleEditFormSubmit(e, editForm, bsModal) {
             
             if (data.html) {
                 document.getElementById('lineTableContainer').innerHTML = data.html;
-                // 再初期化
-                setTimeout(() => {
-                    initializePaginationEvents();
-                    initializeTableEvents();
-                }, 100);
+                initializePaginationEvents();
             }
         } else {
             showToast('error', data.message);
@@ -304,12 +314,11 @@ function handleDeleteLine(e, deleteBtn) {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log('削除ボタンクリック');
-    
     const lineId = deleteBtn.getAttribute('data-line-id');
     const lineName = deleteBtn.getAttribute('data-line-name');
     const deleteUrl = deleteBtn.getAttribute('data-delete-url') || `/manufacturing/line-master/delete/${lineId}/`;
     
+    console.log('削除ボタンクリック');
     console.log('削除URL:', deleteUrl);
     
     const modalHtml = `
@@ -356,7 +365,18 @@ function handleDeleteLine(e, deleteBtn) {
     const deleteConfirmBtn = newModalElement.querySelector('#confirmDeleteBtn');
     if (deleteConfirmBtn) {
         deleteConfirmBtn.addEventListener('click', function() {
-            performDelete(lineId, deleteUrl, bsModal);
+            // 現在のページ情報を取得
+            const pageInfo = getCurrentPageInfo();
+            console.log('削除実行時のページ情報:', pageInfo);
+            
+            // URLパラメータとして送信
+            const deleteUrlObj = new URL(deleteUrl, window.location.origin);
+            deleteUrlObj.searchParams.set('current_page', pageInfo.page);
+            deleteUrlObj.searchParams.set('search_query', pageInfo.search);
+            
+            console.log('削除URL（パラメータ付き）:', deleteUrlObj.toString());
+            
+            performDelete(lineId, deleteUrlObj.toString(), bsModal);
         });
     }
 }
@@ -378,11 +398,7 @@ function performDelete(lineId, deleteUrl, bsModal) {
             
             if (data.html) {
                 document.getElementById('lineTableContainer').innerHTML = data.html;
-                // 再初期化
-                setTimeout(() => {
-                    initializePaginationEvents();
-                    initializeTableEvents();
-                }, 100);
+                initializePaginationEvents();
             }
         } else {
             showToast('error', data.message);
@@ -434,10 +450,13 @@ document.addEventListener('htmx:afterSwap', function(evt) {
 
 // 手動初期化用（line_master_content.htmlから呼び出される）
 window.initializeLineMasterPageManual = function() {
-    console.log('手動初期化: ライン管理ページ');
-    lineMasterInitialized = false; // 強制リセット
-    initializeLineMasterPage();
-    lineMasterInitialized = true;
+    if (!lineMasterInitialized) {
+        console.log('手動初期化: ライン管理ページ');
+        initializeLineMasterPage();
+        lineMasterInitialized = true;
+    } else {
+        console.log('手動初期化: 既に初期化済みのためスキップ');
+    }
 };
 
 // ページがすでに読み込まれている場合の即座初期化
