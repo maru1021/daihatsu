@@ -1,3 +1,6 @@
+<!-- master/line_master/line_master_content.html - HTMX対応修正版 -->
+<!-- HTMXで読み込まれる完全なコンテンツ -->
+
 <!-- ヘッダー部分：検索とボタン -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 class="h3 mb-0">ライン管理</h1>
@@ -5,7 +8,12 @@
         <!-- 検索フォーム -->
         <form class="d-flex">
             <div class="input-group">
-                <input type="text" class="form-control" name="search" placeholder="ライン名で検索..." value="{{ search_query }}">
+                <input type="text" 
+                       class="form-control" 
+                       name="search" 
+                       placeholder="ライン名で検索..." 
+                       value="{{ search_query }}"
+                       data-search-url="{% url 'manufacturing:line_master' %}">
                 <button class="btn btn-outline-secondary" type="button">
                     <i class="fas fa-search"></i>
                 </button>
@@ -22,7 +30,106 @@
 <div class="card">
     <div class="card-body">
         <div id="lineTableContainer">
-            {% include 'master/line_master/line_table_with_pagination.html' %}
+            <!-- テーブル部分を直接埋め込み -->
+            {% if lines %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ライン名</th>
+                                <th>X座標</th>
+                                <th>Y座標</th>
+                                <th>幅</th>
+                                <th>高さ</th>
+                                <th>ステータス</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for line in lines %}
+                            <tr>
+                                <td>{{ line.name }}</td>
+                                <td>{{ line.x_position }}</td>
+                                <td>{{ line.y_position }}</td>
+                                <td>{{ line.width }}</td>
+                                <td>{{ line.height }}</td>
+                                <td>
+                                    {% if line.active %}
+                                        <span class="badge bg-success">有効</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">無効</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-primary edit-line" 
+                                                data-line-id="{{ line.id }}"
+                                                data-edit-url="{% url 'manufacturing:line_master_pk' pk=line.id %}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-sm btn-outline-danger delete-line" 
+                                                data-line-id="{{ line.id }}"
+                                                data-line-name="{{ line.name }}"
+                                                data-delete-url="{% url 'manufacturing:line_delete' pk=line.id %}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- ページネーション -->
+                {% if lines.has_other_pages %}
+                <nav aria-label="ページネーション">
+                    <ul class="pagination justify-content-center">
+                        {% if lines.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">最初</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lines.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">前</a>
+                            </li>
+                        {% endif %}
+
+                        {% for num in lines.paginator.page_range %}
+                            {% if lines.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ num }}</span>
+                                </li>
+                            {% elif num > lines.number|add:'-3' and num < lines.number|add:'3' %}
+                                <li class="page-item">
+                                    <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        {% if lines.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lines.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">次</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ lines.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">最後</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">ラインが見つかりません</h5>
+                    {% if search_query %}
+                        <p class="text-muted">「{{ search_query }}」に該当するラインはありません。</p>
+                    {% else %}
+                        <p class="text-muted">まだラインが登録されていません。</p>
+                    {% endif %}
+                </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -35,27 +142,27 @@
                 <h5 class="modal-title" id="lineFormModalLabel">新規ライン追加</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="lineForm">
+            <form id="lineForm" data-create-url="{% url 'manufacturing:line_master' %}">
                 <div class="modal-body">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="id_name" class="form-label">ライン名</label>
+                        <label for="id_name" class="form-label">ライン名 <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="id_name" name="name" required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_x_position" class="form-label">X座標</label>
+                        <label for="id_x_position" class="form-label">X座標 <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="id_x_position" name="x_position" value="1" required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_y_position" class="form-label">Y座標</label>
+                        <label for="id_y_position" class="form-label">Y座標 <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="id_y_position" name="y_position" value="1" required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_width" class="form-label">幅</label>
+                        <label for="id_width" class="form-label">幅 <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="id_width" name="width" value="1" required>
                     </div>
                     <div class="mb-3">
-                        <label for="id_height" class="form-label">高さ</label>
+                        <label for="id_height" class="form-label">高さ <span class="text-danger">*</span></label>
                         <input type="number" class="form-control" id="id_height" name="height" value="1" required>
                     </div>
                     <div class="mb-3">
@@ -83,359 +190,372 @@
     </div>
 </div>
 
-<!-- トースト通知 -->
-{% include 'components/toast.html' %}
+<!-- CSRF Token -->
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 
+<!-- インライン JavaScript - HTMX遷移対応 -->
 <script>
-// ページ初期化関数（HTMXナビゲーション後の再初期化用）
-function initializeLineMasterPage() {
-    console.log('ライン管理ページ初期化開始');
+// HTMX遷移後の初期化 - 完全版
+(function() {
+    'use strict';
     
-    // **追加**: 残ったモーダルオーバーレイをクリーンアップ
-    const existingBackdrops = document.querySelectorAll('.modal-backdrop');
-    existingBackdrops.forEach(backdrop => backdrop.remove());
-    document.body.classList.remove('modal-open');
-    document.body.style.overflow = '';
-    document.body.style.paddingRight = '';
+    console.log('line_master_content.html: インライン初期化開始');
     
-    // **修正**: トースト表示関数は外部のshowToast関数を使用
-
-    // 既存のイベントリスナーを削除（重複防止）
-    const existingForm = document.getElementById('lineForm');
-    if (existingForm && existingForm._formInitialized) {
-        // 既に初期化済みの場合はスキップ
-        return;
+    // グローバル変数
+    let lineMasterContentInitialized = false;
+    
+    // モーダルクリーンアップ関数
+    function cleanupModals() {
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        backdrops.forEach(backdrop => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
     }
-
-    // 新規追加フォームの送信処理
-    const lineForm = document.getElementById('lineForm');
-    if (lineForm && !lineForm._formInitialized) {
-        lineForm._formInitialized = true;
-        lineForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const formData = new FormData(lineForm);
-            
-            fetch('{% url "manufacturing:line_master" %}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    // **修正**: モーダルを適切に閉じる
-                    const modalElement = document.getElementById('lineFormModal');
-                    const modal = bootstrap.Modal.getInstance(modalElement);
-                    if (modal) {
-                        modal.hide();
-                    }
-                    
-                    // **修正**: モーダル非表示後のクリーンアップ
-                    setTimeout(() => {
-                        const backdrops = document.querySelectorAll('.modal-backdrop');
-                        backdrops.forEach(backdrop => backdrop.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style.overflow = '';
-                        document.body.style.paddingRight = '';
-                    }, 300); // Bootstrapのアニメーション時間を考慮
-                    
-                    // フォームをリセット
-                    lineForm.reset();
-                    document.getElementById('id_x_position').value = '1';
-                    document.getElementById('id_y_position').value = '1';
-                    document.getElementById('id_width').value = '1';
-                    document.getElementById('id_height').value = '1';
-                    document.getElementById('id_active').checked = true;
-                    
-                    // 成功メッセージを表示
-                    showToast('success', data.message);
-                    
-                    // テーブルを更新
-                    if (data.html) {
-                        document.getElementById('lineTableContainer').innerHTML = data.html;
-                        initializePaginationEvents();
-                    }
-                } else {
-                    // エラーメッセージを表示
-                    showToast('error', data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', 'エラーが発生しました。');
-            });
-        });
+    
+    // フォームリセット関数
+    function resetLineForm(form) {
+        form.reset();
+        const xPosInput = document.getElementById('id_x_position');
+        const yPosInput = document.getElementById('id_y_position');
+        const widthInput = document.getElementById('id_width');
+        const heightInput = document.getElementById('id_height');
+        const activeInput = document.getElementById('id_active');
+        
+        if (xPosInput) xPosInput.value = '1';
+        if (yPosInput) yPosInput.value = '1';
+        if (widthInput) widthInput.value = '1';
+        if (heightInput) heightInput.value = '1';
+        if (activeInput) activeInput.checked = true;
     }
-
-    // ページネーションのイベント初期化
-    function initializePaginationEvents() {
+    
+    // ページネーション初期化
+    function initializePagination() {
         document.querySelectorAll('.pagination a').forEach(link => {
-            if (!link._paginationInitialized) {
-                link._paginationInitialized = true;
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const url = this.href;
-                    
-                    fetch(url, {
-                        headers: {
-                            'HX-Request': 'true'
-                        }
-                    })
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('lineTableContainer').innerHTML = html;
-                        initializePaginationEvents();
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showToast('error', 'ページの読み込みに失敗しました。');
-                    });
-                });
-            }
-        });
-    }
-
-    // 検索フォームの処理
-    const searchInput = document.querySelector('input[name="search"]');
-    if (searchInput && !searchInput._searchInitialized) {
-        searchInput._searchInitialized = true;
-        let searchTimeout;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                const searchQuery = this.value;
-                const url = new URL('{% url "manufacturing:line_master" %}', window.location.origin);
-                // **修正**: 常にsearchパラメータを設定（空の値でも）
-                url.searchParams.set('search', searchQuery);
-                
-                console.log('検索URL:', url.toString()); // デバッグ用
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.href;
                 
                 fetch(url, {
-                    headers: {
-                        'HX-Request': 'true'
-                    }
+                    headers: { 'HX-Request': 'true' }
                 })
                 .then(response => response.text())
                 .then(html => {
                     document.getElementById('lineTableContainer').innerHTML = html;
-                    initializePaginationEvents();
+                    // 再初期化
+                    setTimeout(initializeContent, 100);
                 })
                 .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', '検索に失敗しました。');
+                    console.error('ページネーションエラー:', error);
+                    if (window.showToast) {
+                        showToast('error', 'ページの読み込みに失敗しました。');
+                    }
                 });
-            }, 500);
+            });
         });
     }
-
-    // 編集・削除ボタンのクリックイベント（イベントデリゲーション）
-    if (!document.body._lineEventsInitialized) {
-        document.body._lineEventsInitialized = true;
-        
-        // **修正**: 1つのイベントリスナーで編集と削除を処理
-        document.addEventListener('click', function(e) {
-            // 編集ボタンの処理
-            const editBtn = e.target.closest('.edit-line');
-            if (editBtn) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const lineId = editBtn.getAttribute('data-line-id');
-                
-                fetch(`{% url 'manufacturing:line_edit' 0 %}`.replace('0', lineId), {
-                    headers: {
-                        'HX-Request': 'true'
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    const modal = document.getElementById('lineEditModal');
-                    
-                    // **修正**: 既存のモーダルインスタンスをクリーンアップ
-                    const existingModal = bootstrap.Modal.getInstance(modal);
-                    if (existingModal) {
-                        existingModal.dispose();
-                    }
-                    
-                    // **修正**: オーバーレイを強制削除
-                    const existingBackdrops = document.querySelectorAll('.modal-backdrop');
-                    existingBackdrops.forEach(backdrop => backdrop.remove());
-                    
-                    // モーダルコンテンツを更新
-                    modal.querySelector('.modal-content').innerHTML = html;
-                    
-                    // 新しいモーダルインスタンスを作成
-                    const bsModal = new bootstrap.Modal(modal);
-                    
-                    // **修正**: モーダル非表示時のクリーンアップイベントを追加
-                    modal.addEventListener('hidden.bs.modal', function() {
-                        // オーバーレイを確実に削除
-                        const backdrops = document.querySelectorAll('.modal-backdrop');
-                        backdrops.forEach(backdrop => backdrop.remove());
-                        
-                        // body要素のクラスをクリーンアップ
-                        document.body.classList.remove('modal-open');
-                        document.body.style.overflow = '';
-                        document.body.style.paddingRight = '';
-                    }, { once: true }); // 一度だけ実行
-                    
-                    bsModal.show();
-                    
-                    // 編集フォームの送信処理
-                    const editForm = modal.querySelector('form');
-                    if (editForm) {
-                        editForm.addEventListener('submit', function(e) {
-                            e.preventDefault();
-                            
-                            const formData = new FormData(editForm);
-                            
-                            fetch(editForm.action, {
-                                method: 'POST',
-                                body: formData,
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    // モーダルを閉じる
-                                    bsModal.hide();
-                                    
-                                    // 成功メッセージを表示
-                                    showToast('success', data.message);
-                                    
-                                    // テーブルを更新
-                                    if (data.html) {
-                                        document.getElementById('lineTableContainer').innerHTML = data.html;
-                                        initializePaginationEvents();
-                                    }
-                                } else {
-                                    showToast('error', data.message);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                showToast('error', 'エラーが発生しました。');
-                            });
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', '編集画面の読み込みに失敗しました。');
-                });
-                return; // 早期リターンで削除処理との重複を防ぐ
-            }
+    
+    // 検索初期化
+    function initializeSearch() {
+        const searchInput = document.querySelector('input[name="search"]');
+        if (searchInput) {
+            let searchTimeout;
+            const searchUrl = searchInput.getAttribute('data-search-url') || '/manufacturing/line-master/';
             
-            // **修正**: 削除ボタンの処理（モーダル使用）
-            const deleteBtn = e.target.closest('.delete-line');
-            if (deleteBtn) {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                const lineId = deleteBtn.getAttribute('data-line-id');
-                
-                // **修正**: 削除モーダル用のエンドポイントを使用
-                fetch(`{% url 'manufacturing:line_delete_modal' 0 %}`.replace('0', lineId), {
-                    headers: {
-                        'HX-Request': 'true'
-                    }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    // **修正**: 既存の削除モーダルを削除
-                    const existingDeleteModals = document.querySelectorAll(`[id^="deleteLineModal"]`);
-                    existingDeleteModals.forEach(modal => modal.remove());
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const searchQuery = this.value;
+                    const url = new URL(searchUrl, window.location.origin);
+                    url.searchParams.set('search', searchQuery);
                     
-                    // **修正**: モーダルを非表示の状態で追加
-                    const tempDiv = document.createElement('div');
-                    tempDiv.innerHTML = html;
-                    const newModalElement = tempDiv.firstElementChild;
+                    fetch(url, {
+                        headers: { 'HX-Request': 'true' }
+                    })
+                    .then(response => response.text())
+                    .then(html => {
+                        document.getElementById('lineTableContainer').innerHTML = html;
+                        // 再初期化
+                        setTimeout(initializeContent, 100);
+                    })
+                    .catch(error => {
+                        console.error('検索エラー:', error);
+                        if (window.showToast) {
+                            showToast('error', '検索に失敗しました。');
+                        }
+                    });
+                }, 500);
+            });
+        }
+    }
+    
+    // 編集処理
+    function handleEdit(editBtn) {
+        const lineId = editBtn.getAttribute('data-line-id');
+        const editUrl = editBtn.getAttribute('data-edit-url');
+        
+        fetch(editUrl, {
+            headers: { 'HX-Request': 'true' }
+        })
+        .then(response => response.text())
+        .then(html => {
+            const modal = document.getElementById('lineEditModal');
+            
+            // 既存のモーダルインスタンスを削除
+            const existingModal = bootstrap.Modal.getInstance(modal);
+            if (existingModal) existingModal.dispose();
+            
+            cleanupModals();
+            
+            // モーダルコンテンツを更新
+            modal.querySelector('.modal-content').innerHTML = html;
+            
+            // 新しいモーダルインスタンスを作成
+            const bsModal = new bootstrap.Modal(modal);
+            
+            // モーダル非表示時のクリーンアップ
+            modal.addEventListener('hidden.bs.modal', cleanupModals, { once: true });
+            
+            // モーダルを表示
+            bsModal.show();
+            
+            // 編集フォームの送信処理
+            const editForm = modal.querySelector('form');
+            if (editForm) {
+                editForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
                     
-                    // モーダルをページに追加（非表示状態）
-                    document.body.appendChild(newModalElement);
+                    const formData = new FormData(editForm);
                     
-                    // **修正**: モーダルを即座に表示
-                    const bsModal = new bootstrap.Modal(newModalElement);
-                    bsModal.show();
-                    
-                    // モーダル非表示時のクリーンアップ
-                    newModalElement.addEventListener('hidden.bs.modal', function() {
-                        newModalElement.remove();
-                        // オーバーレイのクリーンアップ
-                        const backdrops = document.querySelectorAll('.modal-backdrop');
-                        backdrops.forEach(backdrop => backdrop.remove());
-                        document.body.classList.remove('modal-open');
-                        document.body.style.overflow = '';
-                        document.body.style.paddingRight = '';
-                    }, { once: true });
-                    
-                    // 削除確認ボタンのイベント処理
-                    const deleteConfirmBtn = newModalElement.querySelector('.btn-danger');
-                    if (deleteConfirmBtn) {
-                        deleteConfirmBtn.addEventListener('click', function() {
-                            fetch(`{% url 'manufacturing:line_delete' 0 %}`.replace('0', lineId), {
-                                method: 'DELETE',
-                                headers: {
-                                    'X-Requested-With': 'XMLHttpRequest',
-                                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-                                }
-                            })
-                            .then(response => response.json())
-                            .then(data => {
-                                if (data.status === 'success') {
-                                    bsModal.hide();
-                                    showToast('success', data.message);
-                                    
-                                    // テーブルを更新
-                                    if (data.html) {
-                                        document.getElementById('lineTableContainer').innerHTML = data.html;
-                                        initializePaginationEvents();
-                                    }
-                                } else {
-                                    showToast('error', data.message);
-                                }
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                showToast('error', '削除に失敗しました。');
-                            });
-                        });
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', '削除画面の読み込みに失敗しました。');
+                    fetch(editForm.action, {
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            bsModal.hide();
+                            if (window.showToast) {
+                                showToast('success', data.message);
+                            }
+                            
+                            if (data.html) {
+                                document.getElementById('lineTableContainer').innerHTML = data.html;
+                                setTimeout(initializeContent, 100);
+                            }
+                        } else {
+                            if (window.showToast) {
+                                showToast('error', data.message);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('編集エラー:', error);
+                        if (window.showToast) {
+                            showToast('error', 'エラーが発生しました。');
+                        }
+                    });
                 });
+            }
+        })
+        .catch(error => {
+            console.error('編集画面読み込みエラー:', error);
+            if (window.showToast) {
+                showToast('error', '編集画面の読み込みに失敗しました。');
             }
         });
     }
-
-    // 初期化
-    initializePaginationEvents();
-    console.log('ライン管理ページ初期化完了');
-}
-
-// DOMContentLoaded時の初期化
-document.addEventListener('DOMContentLoaded', initializeLineMasterPage);
-
-// HTMXナビゲーション後の初期化（base.htmlのHTMX対応）
-document.addEventListener('htmx:afterSwap', function(evt) {
-    if (evt.detail.target.classList.contains('main-content')) {
-        setTimeout(initializeLineMasterPage, 100);
+    
+    // 削除処理
+    function handleDelete(deleteBtn) {
+        const lineId = deleteBtn.getAttribute('data-line-id');
+        const lineName = deleteBtn.getAttribute('data-line-name');
+        const deleteUrl = deleteBtn.getAttribute('data-delete-url');
+        
+        const modalHtml = `
+            <div class="modal fade" id="deleteLineModal${lineId}" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">ライン削除の確認</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p>本当に「${lineName}」を削除してもよろしいですか？</p>
+                            <p class="text-danger">この操作は取り消せません。</p>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">キャンセル</button>
+                            <button type="button" class="btn btn-danger" id="confirmDeleteBtn">削除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // 既存の削除モーダルを削除
+        const existingDeleteModals = document.querySelectorAll(`[id^="deleteLineModal"]`);
+        existingDeleteModals.forEach(modal => modal.remove());
+        
+        // 新しいモーダルを追加
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = modalHtml;
+        const newModalElement = tempDiv.firstElementChild;
+        document.body.appendChild(newModalElement);
+        
+        const bsModal = new bootstrap.Modal(newModalElement);
+        bsModal.show();
+        
+        // クリーンアップ処理
+        newModalElement.addEventListener('hidden.bs.modal', function() {
+            newModalElement.remove();
+            cleanupModals();
+        }, { once: true });
+        
+        // 削除確認ボタンの処理
+        const deleteConfirmBtn = newModalElement.querySelector('#confirmDeleteBtn');
+        if (deleteConfirmBtn) {
+            deleteConfirmBtn.addEventListener('click', function() {
+                fetch(deleteUrl, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        bsModal.hide();
+                        if (window.showToast) {
+                            showToast('success', data.message);
+                        }
+                        
+                        if (data.html) {
+                            document.getElementById('lineTableContainer').innerHTML = data.html;
+                            setTimeout(initializeContent, 100);
+                        }
+                    } else {
+                        if (window.showToast) {
+                            showToast('error', data.message);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('削除エラー:', error);
+                    if (window.showToast) {
+                        showToast('error', '削除に失敗しました。');
+                    }
+                });
+            });
+        }
     }
-});
-
-// 即座に初期化実行（既にDOMが読み込まれている場合）
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeLineMasterPage);
-} else {
-    initializeLineMasterPage();
-}
+    
+    // テーブルイベント初期化
+    function initializeTableEvents() {
+        // 編集ボタン
+        document.querySelectorAll('.edit-line').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleEdit(this);
+            });
+        });
+        
+        // 削除ボタン
+        document.querySelectorAll('.delete-line').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                handleDelete(this);
+            });
+        });
+    }
+    
+    // フォーム初期化
+    function initializeForm() {
+        const lineForm = document.getElementById('lineForm');
+        if (lineForm) {
+            lineForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = new FormData(lineForm);
+                const createUrl = lineForm.getAttribute('data-create-url');
+                
+                fetch(createUrl, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        const modalElement = document.getElementById('lineFormModal');
+                        const modal = bootstrap.Modal.getInstance(modalElement);
+                        if (modal) modal.hide();
+                        
+                        setTimeout(cleanupModals, 300);
+                        
+                        resetLineForm(lineForm);
+                        if (window.showToast) {
+                            showToast('success', data.message);
+                        }
+                        
+                        if (data.html) {
+                            document.getElementById('lineTableContainer').innerHTML = data.html;
+                            setTimeout(initializeContent, 100);
+                        }
+                    } else {
+                        if (window.showToast) {
+                            showToast('error', data.message);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('登録エラー:', error);
+                    if (window.showToast) {
+                        showToast('error', 'エラーが発生しました。');
+                    }
+                });
+            });
+        }
+    }
+    
+    // メイン初期化関数
+    function initializeContent() {
+        if (lineMasterContentInitialized) return;
+        lineMasterContentInitialized = true;
+        
+        console.log('ライン管理コンテンツ初期化中...');
+        
+        cleanupModals();
+        initializePagination();
+        initializeSearch();
+        initializeTableEvents();
+        initializeForm();
+        
+        console.log('ライン管理コンテンツ初期化完了');
+    }
+    
+    // 初期化実行
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initializeContent);
+    } else {
+        setTimeout(initializeContent, 50);
+    }
+    
+    // グローバルに公開（外部からの呼び出し用）
+    window.initializeLineMasterContent = function() {
+        lineMasterContentInitialized = false;
+        initializeContent();
+    };
+    
+})();
 </script>

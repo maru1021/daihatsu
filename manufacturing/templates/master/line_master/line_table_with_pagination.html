@@ -1,24 +1,102 @@
-<!-- テーブルとページネーションをセットにしたテンプレート -->
+<!-- master/line_master/line_table_with_pagination.html - 修正版 -->
+{% load modal_tags %}
+
 {% if lines %}
     <div class="table-responsive">
         <table class="table table-hover">
             <thead>
-                {% include 'master/line_master/line_table_header.html' %}
+                <tr>
+                    <th>ライン名</th>
+                    <th>X座標</th>
+                    <th>Y座標</th>
+                    <th>幅</th>
+                    <th>高さ</th>
+                    <th>ステータス</th>
+                    <th>操作</th>
+                </tr>
             </thead>
-            <tbody id="lineTableBody">
+            <tbody>
                 {% for line in lines %}
-                {% include 'master/line_master/line_row.html' %}
+                <tr>
+                    <td>{{ line.name }}</td>
+                    <td>{{ line.x_position }}</td>
+                    <td>{{ line.y_position }}</td>
+                    <td>{{ line.width }}</td>
+                    <td>{{ line.height }}</td>
+                    <td>
+                        {% if line.active %}
+                            <span class="badge bg-success">有効</span>
+                        {% else %}
+                            <span class="badge bg-secondary">無効</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-primary edit-line" 
+                                    data-line-id="{{ line.id }}"
+                                    data-edit-url="{% url 'manufacturing:line_master_pk' pk=line.id %}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-danger delete-line" 
+                                    data-line-id="{{ line.id }}"
+                                    data-line-name="{{ line.name }}"
+                                    data-delete-url="{% url 'manufacturing:line_delete' pk=line.id %}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
-    {% include 'master/line_master/line_pagination.html' %}
+
+    <!-- ページネーション（JavaScript処理） -->
+    {% if lines.has_other_pages %}
+    <nav aria-label="ページネーション">
+        <ul class="pagination justify-content-center">
+            {% if lines.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}">最初</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ lines.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">前</a>
+                </li>
+            {% endif %}
+
+            {% for num in lines.paginator.page_range %}
+                {% if lines.number == num %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ num }}</span>
+                    </li>
+                {% elif num > lines.number|add:'-3' and num < lines.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if lines.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ lines.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}">次</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ lines.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}">最後</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 {% else %}
-    <div class="text-center py-4">
+    <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">ラインが見つかりません</h5>
         {% if search_query %}
-            <p class="text-muted mb-0">検索条件「{{ search_query }}」に一致するデータが見つかりませんでした。</p>
+            <p class="text-muted">「{{ search_query }}」に該当するラインはありません。</p>
         {% else %}
-            <p class="text-muted mb-0">データが登録されていません。</p>
+            <p class="text-muted">まだラインが登録されていません。</p>
         {% endif %}
     </div>
 {% endif %}

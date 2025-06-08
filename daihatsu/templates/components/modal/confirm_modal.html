@@ -1,0 +1,22 @@
+<!-- components/modal/confirm_modal.html -->
+<!-- 汎用確認モーダルコンポーネント -->
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+  <div class="modal-dialog{{ modal_size|default:'' }}">
+      <div class="modal-content">
+          <div class="modal-header">
+              <h5 class="modal-title" id="{{ modal_id }}Label">{{ modal_title }}</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+              {{ modal_message|safe }}
+              {% if warning_message %}
+              <p class="text-danger">{{ warning_message }}</p>
+              {% endif %}
+          </div>
+          <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancel_text|default:'キャンセル' }}</button>
+              <button type="button" class="btn {{ confirm_btn_class|default:'btn-danger' }}" data-action="{{ confirm_action }}" data-id="{{ item_id }}">{{ confirm_text|default:'削除' }}</button>
+          </div>
+      </div>
+  </div>
+</div>

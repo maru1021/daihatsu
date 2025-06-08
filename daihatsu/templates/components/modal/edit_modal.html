@@ -1,0 +1,16 @@
+<!-- components/modal/edit_modal.html -->
+<!-- 汎用編集モーダルコンポーネント -->
+<div class="modal-header">
+  <h5 class="modal-title">{{ modal_title }}</h5>
+  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<form action="{{ form_action_url }}" method="post">
+  <div class="modal-body">
+      {% csrf_token %}
+      {{ form_content|safe }}
+  </div>
+  <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ cancel_text|default:'キャンセル' }}</button>
+      <button type="submit" class="btn btn-primary">{{ submit_text|default:'更新' }}</button>
+  </div>
+</form>

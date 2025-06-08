@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="ja">
   <head>
@@ -213,9 +214,24 @@
       {% block content %} {% endblock %}
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://unpkg.com/htmx.org@1.9.2"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Font Awesome（使用する場合はご自身のキットIDに変更してください） -->
+    <!-- <script src="https://kit.fontawesome.com/YOUR_FONTAWESOME_KIT.js" crossorigin="anonymous"></script> -->
+
+    <!-- 共通JavaScript -->
+    <script src="{% static 'js/toast.js' %}"></script>
+    <!-- <script src="{% static 'js/components/crud_manager.js' %}"></script> -->
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <!-- ページ固有のJavaScript -->
+    {% block extra_js %}
+    {% endblock %}
+    
     <script>
       $(function () {
         const STORAGE_KEY = "sidebarState";
@@ -329,6 +345,20 @@
                 "max-width": "none",
                 "box-sizing": "border-box"
               });
+              
+              // **追加**: ページ固有の初期化関数を呼び出し
+              setTimeout(() => {
+                // ライン管理ページの場合
+                if (typeof window.initializeLineMasterContent === 'function') {
+                  console.log('HTMXナビゲーション後: ライン管理ページ初期化');
+                  window.initializeLineMasterContent();
+                }
+                
+                // 他のページ用の初期化関数もここに追加可能
+                // if (typeof window.initializeOtherPageContent === 'function') {
+                //   window.initializeOtherPageContent();
+                // }
+              }, 200);
             }, 100);
           }
         });
@@ -352,6 +382,5 @@
         setInterval(forceColors, 5000);
       });
     </script>
-    {% block extra_js %}{% endblock %}
   </body>
 </html>

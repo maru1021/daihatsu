@@ -1,0 +1,76 @@
+<!-- components/table/table_with_pagination.html -->
+{% load custom_filters %}
+{% if config.items %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    {% for column in config.columns %}
+                    <th>{{ column.label }}</th>
+                    {% endfor %}
+                    {% if config.actions.edit_url or config.actions.delete_url %}
+                    <th>操作</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in config.items %}
+                <tr>
+                    {% for column in config.columns %}
+                    <td>
+                        {% if column.type == 'boolean' %}
+                            {% if item|lookup:column.key %}
+                                <span class="badge bg-success">{{ column.true_text|default:'有効' }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ column.false_text|default:'無効' }}</span>
+                            {% endif %}
+                        {% elif column.template %}
+                            {{ column.template|replace_placeholders:item }}
+                        {% else %}
+                            {{ item|lookup:column.key }}
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                    
+                    {% if config.actions.edit_url or config.actions.delete_url %}
+                    <td>
+                        <div class="btn-group" role="group">
+                            {% if config.actions.edit_url %}
+                            <button class="btn btn-sm btn-outline-primary edit-btn" 
+                                    title="編集" 
+                                    data-item-id="{{ item.id }}"
+                                    data-item-name="{{ item.name|default:item.title|default:item }}">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            {% endif %}
+                            
+                            {% if config.actions.delete_url %}
+                            <button class="btn btn-sm btn-outline-danger delete-btn" 
+                                    title="削除" 
+                                    data-item-id="{{ item.id }}"
+                                    data-item-name="{{ item.name|default:item.title|default:item }}">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- ページネーション -->
+    {% if config.pagination and config.items.has_other_pages %}
+        {% include 'components/table/pagination.html' with page_obj=config.items %}
+    {% endif %}
+{% else %}
+    <div class="text-center py-4">
+        {% if search_query %}
+            <p class="text-muted mb-0">検索条件「{{ search_query }}」に一致するデータが見つかりませんでした。</p>
+        {% else %}
+            <p class="text-muted mb-0">データが登録されていません。</p>
+        {% endif %}
+    </div>
+{% endif %}

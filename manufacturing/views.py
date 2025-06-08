@@ -24,53 +24,74 @@ class LineMasterView(TemplateView):
     template_name = 'master/line_master/line_master.html'
 
     def get(self, request, *args, **kwargs):
-        # HTMXリクエストの詳細判定
-        is_htmx = request.headers.get('HX-Request')
-        has_search_param = 'search' in request.GET
-        has_page = request.GET.get('page') is not None
-        has_pk = 'pk' in kwargs
-        
-        # **重要**: User-AgentでJavaScriptからのリクエストかどうかを判定
-        user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
-        is_browser_nav = 'mozilla' in user_agent or 'chrome' in user_agent or 'safari' in user_agent
-        
-        if is_htmx and has_pk:
-            # 編集モーダルの内容を返す
-            line = get_object_or_404(Line, pk=kwargs['pk'])
-            context = {'line': line}
-            return render(request, 'master/line_master/line_edit_modal.html', context)
-        elif is_htmx and (has_search_param or has_page):
-            # **修正**: 検索（値が空でも）やページネーション：テーブル+ページネーションのみ
-            context = self.get_context_data(**kwargs)
-            return render(request, 'master/line_master/line_table_with_pagination.html', context)
-        elif is_htmx and is_browser_nav:
-            # **HTMXサイドバーナビゲーション**: コンテンツ部分のみ（真のSPA）
-            context = self.get_context_data(**kwargs)
-            return render(request, 'master/line_master/line_master_content.html', context)
-        
-        # 直接アクセス、リロード、ブックマーク：完全なページを返す
-        return super().get(request, *args, **kwargs)
+      is_htmx = request.headers.get('HX-Request')
+      has_search_param = 'search' in request.GET
+      has_page = request.GET.get('page') is not None
+      has_pk = 'pk' in kwargs
+      
+      # デバッグ情報
+      print(f"=== LineMasterView Debug ===")
+      print(f"is_htmx: {is_htmx}")
+      print(f"has_search_param: {has_search_param}")
+      print(f"has_page: {has_page}")
+      print(f"has_pk: {has_pk}")
+      print(f"request.GET: {request.GET}")
+      print(f"request.headers HX-Request: {request.headers.get('HX-Request')}")
+      print(f"request.path: {request.path}")
+      print(f"kwargs: {kwargs}")
+      
+      if has_pk:
+          # 編集モーダルの内容を返す
+          print("=> Returning edit modal")
+          line = get_object_or_404(Line, pk=kwargs['pk'])
+          from django.urls import reverse
+          edit_url = reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']})
+          context = {'line': line, 'edit_url': edit_url}
+          return render(request, 'master/line_master/line_edit_modal.html', context)
+      elif is_htmx and (has_search_param or has_page):
+          # 検索やページネーション：テーブル+ページネーションのみを返す
+          print("=> Returning table only (pagination/search)")
+          context = self.get_context_data(**kwargs)
+          return render(request, 'master/line_master/line_table_with_pagination.html', context)
+      elif is_htmx:
+          # その他のHTMXリクエスト：コンテンツ部分のみ
+          print("=> Returning content only (other HTMX)")
+          context = self.get_context_data(**kwargs)
+          return render(request, 'master/line_master/line_master_content.html', context)
+      
+      # 直接アクセス：完全なページを返す
+      print("=> Returning full page (direct access)")
+      self.template_name = 'master/line_master/line_master.html'
+      return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        lines = Line.objects.all().order_by('id')
-        
-        # 検索処理
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            lines = lines.filter(name__icontains=search_query)
-        
-        paginator = Paginator(lines, 10)
-        page_number = self.request.GET.get('page', 1)
-        page_obj = paginator.get_page(page_number)
-        
-        context = {
-            'lines': page_obj,
-            'form': LineForm(),
-            'search_query': search_query,
-        }
-        
-        return context
+      context = super().get_context_data(**kwargs)
+      lines = Line.objects.all().order_by('id')
+      
+      # 検索処理
+      search_query = self.request.GET.get('search', '')
+      if search_query:
+          lines = lines.filter(name__icontains=search_query)
+      
+      paginator = Paginator(lines, 10)
+      page_number = self.request.GET.get('page', 1)
+      page_obj = paginator.get_page(page_number)
+      
+      # Django reverse URLを使用してアクションURLを動的生成
+      from django.urls import reverse
+      
+      context = {
+          'lines': page_obj,
+          'form': LineForm(),
+          'search_query': search_query,
+          'form_action_url': reverse('manufacturing:line_master'),
+      }
+      
+      # 編集モーダル用に個別のedit_urlを追加
+      if 'pk' in kwargs:
+          context['edit_url'] = reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']})
+      
+      return context
 
     def post(self, request, *args, **kwargs):
         if 'pk' in kwargs:
@@ -218,86 +239,3 @@ class MachineMasterView(TemplateView):
                 'message': f'エラーが発生しました: {str(e)}'
             }, status=400)
 
-class MachineCreateView(TemplateView):
-    def post(self, request, *args, **kwargs):
-        try:
-            line_id = request.POST.get('line')
-            line = Line.objects.get(id=line_id) if line_id else None
-            
-            machine = Machine.objects.create(
-                id=request.POST.get('machine_id'),
-                name=request.POST.get('name'),
-                line=line,
-                x_position=request.POST.get('x_position'),
-                y_position=request.POST.get('y_position'),
-                width=request.POST.get('width'),
-                height=request.POST.get('height'),
-                status=request.POST.get('status')
-            )
-            html = render_to_string('master/machine_master/machine_row.html', {'machine': machine})
-            return HttpResponse(html)
-        except Exception as e:
-            return HttpResponse(f'エラーが発生しました: {str(e)}', status=400)
-
-class MachineEditView(TemplateView):
-    template_name = 'master/machine_master/machine_edit_modal.html'
-
-    def get(self, request, *args, **kwargs):
-        machine = get_object_or_404(Machine, pk=kwargs['pk'])
-        context = {'machine': machine, 'lines': Line.objects.all().order_by('id')}
-        html = render_to_string(self.template_name, context)
-        return HttpResponse(html)
-
-    def post(self, request, *args, **kwargs):
-        try:
-            machine = get_object_or_404(Machine, pk=kwargs['pk'])
-            line_id = request.POST.get('line')
-            line = Line.objects.get(id=line_id) if line_id else None
-
-            machine.name = request.POST.get('name')
-            machine.status = request.POST.get('status')
-            machine.x_position = request.POST.get('x_position')
-            machine.y_position = request.POST.get('y_position')
-            machine.width = request.POST.get('width')
-            machine.height = request.POST.get('height')
-            machine.line = line
-            machine.active = request.POST.get('active') == 'on'
-            machine.save()
-
-            context = self.get_context_data()
-            context['machines'] = Machine.objects.all().order_by('id')
-            context['lines'] = Line.objects.all().order_by('id')
-            html = render_to_string('master/machine_master/machine_master_content.html', context)
-            return JsonResponse({
-                'status': 'success',
-                'message': 'マシンを更新しました',
-                'html': html
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'エラーが発生しました: {str(e)}'
-            }, status=400)
-
-class MachineDeleteView(TemplateView):
-    def delete(self, request, *args, **kwargs):
-        try:
-            machine = get_object_or_404(Machine, pk=kwargs['pk'])
-            machine.delete()
-
-            context = self.get_context_data()
-            context['machines'] = Machine.objects.all().order_by('id')
-            context['lines'] = Line.objects.all().order_by('id')
-            html = render_to_string('master/machine_master/machine_master_content.html', context)
-            return JsonResponse({
-                'status': 'success',
-                'message': 'マシンを削除しました',
-                'html': html
-            })
-
-        except Exception as e:
-            return JsonResponse({
-                'status': 'error',
-                'message': f'エラーが発生しました: {str(e)}'
-            }, status=400)
