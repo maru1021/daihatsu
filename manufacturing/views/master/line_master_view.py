@@ -17,10 +17,10 @@ class LineMasterView(TemplateView):
       has_page = request.GET.get('page') is not None
       has_pk = 'pk' in kwargs
       
+      # 編集時の初期値
       if has_pk:
           line = get_object_or_404(Line, pk=kwargs['pk'])
           
-          # ラインの情報をJSONで返す
           response_data = {
               'status': 'success',
               'data': {
@@ -37,16 +37,18 @@ class LineMasterView(TemplateView):
           }
           
           return JsonResponse(response_data)
+      
+      # 検索やページネーション時
       elif is_htmx and (has_search_param or has_page):
-          # 検索やページネーション：テーブル+ページネーションのみを返す
           context = self.get_context_data(**kwargs)
           return render(request, 'master/line_master/line_table_with_pagination.html', context)
+      
+      # 通常アクセス時
       elif is_htmx:
-          # その他のHTMXリクエスト：コンテンツ部分のみ
           context = self.get_context_data(**kwargs)
           return render(request, 'master/line_master/line_master_content.html', context)
       
-      # 直接アクセス：完全なページを返す
+      # リロード時など
       self.template_name = 'master/line_master/line_master.html'
       return super().get(request, *args, **kwargs)
 
@@ -65,7 +67,6 @@ class LineMasterView(TemplateView):
         page_obj = paginator.get_page(page_number)
         display_pagination = True if lines.count() > 10 else False
         
-        # データの整形
         formatted_data = []
         for line in page_obj:
             formatted_data.append({
@@ -93,13 +94,13 @@ class LineMasterView(TemplateView):
         
         return context
 
+    # 登録、編集、削除などの時に、現在のページと検索条件、データを保持するのに使用
     def get_preserved_context(self, request):
-        """現在のページと検索条件を保持したコンテキストを取得"""
-        # POSTリクエストから現在のページ情報を取得
         current_page = request.POST.get('current_page') or request.GET.get('page', '1')
         search_query = request.POST.get('search_query') or request.GET.get('search', '')
         
         lines = Line.objects.all().order_by('id')
+        display_pagination = True if lines.count() > 10 else False
         
         # 検索処理
         if search_query:
@@ -139,9 +140,11 @@ class LineMasterView(TemplateView):
             })
         return {
             'data': formatted_data,
+            'page_obj': page_obj,
             'search_query': search_query,
             'form_action_url': reverse('manufacturing:line_master'),
-            'headers': ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作']
+            'headers': ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作'],
+            'display_pagination': display_pagination
         }
 
     def post(self, request, *args, **kwargs):
