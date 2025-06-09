@@ -4,7 +4,7 @@
 
 // 編集フォームの初期化
 export function initializeEditForm(data) {
-    if (!data || !data.line) {
+    if (!data || !data.data) {
         console.error('Invalid data format:', data);
         return;
     }
@@ -16,7 +16,7 @@ export function initializeEditForm(data) {
     }
 
     // フォームの各フィールドに値を設定
-    const formData = data.line;
+    const formData = data.data;
     for (const [key, value] of Object.entries(formData)) {
         const input = form.querySelector(`[name="${key}"]`);
         if (input) {
