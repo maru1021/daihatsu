@@ -24,7 +24,7 @@
                        placeholder="{{ search_placeholder|default:'検索...' }}" 
                        value="{{ search_query }}"
                        data-search-url="{{ search_url }}">
-                <button class="btn btn-outline-secondary" type="button">
+                <button class="btn btn-outline-secondary" type="button" disabled>
                     <i class="fas fa-search"></i>
                 </button>
             </div>
@@ -34,7 +34,7 @@
         {% if add_button_text and add_button_target %}
         <!-- 新規追加ボタン -->
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ add_button_target }}">
-            <i class="fas fa-plus"></i> {{ add_button_text }}
+             {{ add_button_text }}
         </button>
         {% endif %}
     </div>

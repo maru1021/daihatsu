@@ -1,8 +1,7 @@
 <!-- master/line_master/line_table_with_pagination.html - 修正版 -->
-{% load modal_tags %}
 
 <!-- ページ情報を保持する隠し要素 -->
-<input type="hidden" id="currentPageNumber" value="{{ lines.number|default:'1' }}">
+<input type="hidden" id="currentPageNumber" value="{{ data.number|default:'1' }}">
 <input type="hidden" id="currentSearchQuery" value="{{ search_query|default:'' }}">
 
 {% if data %}
@@ -96,11 +95,11 @@
 {% else %}
     <div class="text-center py-5">
         <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
-        <h5 class="text-muted">ラインが見つかりません</h5>
+        <h5 class="text-muted">データが見つかりません</h5>
         {% if search_query %}
-            <p class="text-muted">「{{ search_query }}」に該当するラインはありません。</p>
+            <p class="text-muted">「{{ search_query }}」に該当するデータはありません。</p>
         {% else %}
-            <p class="text-muted">まだラインが登録されていません。</p>
+            <p class="text-muted">まだデータが登録されていません。</p>
         {% endif %}
     </div>
 {% endif %}

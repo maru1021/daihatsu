@@ -1,7 +1,6 @@
 <!-- master/line_master/line_master.html -->
 {% extends 'base.html' %}
 {% load static %}
-{% load modal_tags %}
 
 {% block title %}ライン管理 - Daihatsu{% endblock %}
 
@@ -19,10 +18,10 @@
 </div>
 
 <!-- 新規追加モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="RegisterModal" modal_title="新規ライン追加" form_id="RegisterForm" form_action_url=form_action_url form_template="master/line_master/forms/form_fields.html" submit_text="登録" %}
+{% include "components/modal/generic_crud_modal.html" with modal_id="RegisterModal" modal_title="新規ライン追加" form_id="RegisterForm" form_action_url=register_url form_template="master/line_master/forms/register_form.html" submit_text="登録" %}
 
 <!-- 編集モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="EditModal" modal_title="ライン編集" form_id="EditForm" form_action_url=form_action_url form_template="master/line_master/forms/form_fields.html" submit_text="更新" %}
+{% include "components/modal/generic_crud_modal.html" with modal_id="EditModal" modal_title="ライン編集" form_id="EditForm" form_action_url=form_action_url form_template="master/line_master/forms/edit_form.html" submit_text="更新" %}
 
 <!-- 削除確認モーダル -->
 {% include "components/modal/generic_delete_modal.html" with modal_id="DeleteModal" title="ライン削除の確認" message="本当に" confirm_button_text="削除" %}

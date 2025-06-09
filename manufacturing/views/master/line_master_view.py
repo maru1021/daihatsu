@@ -4,7 +4,6 @@ from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 from django.core.paginator import Paginator
 from manufacturing.models import Line
-from manufacturing.forms import LineForm
 from django.shortcuts import render
 
 
@@ -71,7 +70,6 @@ class LineMasterView(TemplateView):
       
       context = {
           'data': page_obj,
-          'form': LineForm(),
           'search_query': search_query,
           'form_action_url': reverse('manufacturing:line_master'),
       }
@@ -113,7 +111,6 @@ class LineMasterView(TemplateView):
         
         return {
             'data': page_obj,
-            'form': LineForm(),
             'search_query': search_query,
             'form_action_url': reverse('manufacturing:line_master'),
         }
@@ -146,26 +143,15 @@ class LineMasterView(TemplateView):
                     'message': f'エラーが発生しました: {str(e)}'
                 }, status=400)
         else:
-            # 新規登録処理
-            form = LineForm(request.POST)
-            if form.is_valid():
-                form.save()
-                
-                # 現在のページ情報を保持してコンテキストを生成
-                context = self.get_preserved_context(request)
-                html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
-                
-                return JsonResponse({
-                    'status': 'success',
-                    'message': 'ラインが正常に登録されました。',
-                    'html': html
-                })
-            else:
-                return JsonResponse({
-                    'status': 'error',
-                    'message': '入力内容に誤りがあります。',
-                    'errors': form.errors
-                }, status=400)
+              # 新規登録処理
+              context = self.get_preserved_context(request)
+              html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
+              
+              return JsonResponse({
+                  'status': 'success',
+                  'message': 'ラインが正常に登録されました。',
+                  'html': html
+              })
 
     def delete(self, request, *args, **kwargs):
         try:
@@ -209,17 +195,3 @@ class LineMasterView(TemplateView):
                 'status': 'error',
                 'message': f'エラーが発生しました: {str(e)}'
             }, status=400)
-
-class LineDeleteModalView(TemplateView):
-    template_name = 'master/line_master/line_delete_modal.html'
-
-    def get(self, request, *args, **kwargs):
-        line = get_object_or_404(Line, pk=kwargs['pk'])
-        
-        if request.headers.get('HX-Request'):
-            # HTMXリクエストの場合、モーダルの内容だけを返す
-            context = {'line': line}
-            return render(request, self.template_name, context)
-        else:
-            # 直接アクセスの場合は適切にハンドリング
-            return HttpResponse("Direct access not allowed", status=403)
