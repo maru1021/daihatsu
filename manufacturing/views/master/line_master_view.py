@@ -5,6 +5,7 @@ from django.views.generic import TemplateView
 from django.core.paginator import Paginator
 from manufacturing.models import Line
 from django.shortcuts import render
+from django.urls import reverse
 
 
 class LineMasterView(TemplateView):
@@ -19,9 +20,6 @@ class LineMasterView(TemplateView):
       if has_pk:
           line = get_object_or_404(Line, pk=kwargs['pk'])
           
-          from django.urls import reverse
-          edit_url = reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']})
-          
           # ラインの情報をJSONで返す
           response_data = {
               'status': 'success',
@@ -34,8 +32,8 @@ class LineMasterView(TemplateView):
                   'height': line.height,
                   'active': line.active
               },
-              'edit_url': edit_url,
-              'register_url': reverse('manufacturing:line_master'),
+              'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']}),
+              'has_page': has_page
           }
           
           return JsonResponse(response_data)
@@ -53,32 +51,47 @@ class LineMasterView(TemplateView):
       return super().get(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
-      context = super().get_context_data(**kwargs)
-      lines = Line.objects.all().order_by('id')
-      
-      # 検索処理
-      search_query = self.request.GET.get('search', '')
-      if search_query:
-          lines = lines.filter(name__icontains=search_query)
-      
-      paginator = Paginator(lines, 10)
-      page_number = self.request.GET.get('page', 1)
-      page_obj = paginator.get_page(page_number)
-      
-      # Django reverse URLを使用してアクションURLを動的生成
-      from django.urls import reverse
-      
-      context = {
-          'data': page_obj,
-          'search_query': search_query,
-          'form_action_url': reverse('manufacturing:line_master'),
-      }
-      
-      # 編集モーダル用に個別のedit_urlを追加
-      if 'pk' in kwargs:
-          context['edit_url'] = reverse('manufacturing:line_edit', kwargs={'pk': kwargs['pk']})
-      
-      return context
+        context = super().get_context_data(**kwargs)
+        context['headers'] = ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作']
+        lines = Line.objects.all().order_by('id')
+        
+        # 検索処理
+        search_query = self.request.GET.get('search', '')
+        if search_query:
+            lines = lines.filter(name__icontains=search_query)
+        
+        paginator = Paginator(lines, 10)
+        page_number = self.request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
+        display_pagination = True if lines.count() > 10 else False
+        
+        # データの整形
+        formatted_data = []
+        for line in page_obj:
+            formatted_data.append({
+                'id': line.id,
+                'fields': [
+                    line.name,
+                    str(line.x_position),
+                    str(line.y_position),
+                    str(line.width),
+                    str(line.height),
+                    '有効' if line.active else '無効'
+                ],
+                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': line.id}),
+                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': line.id}),
+                'name': line.name,
+            })
+        
+        context.update({
+            'data': formatted_data,
+            'page_obj': page_obj,
+            'search_query': search_query,
+            'form_action_url': reverse('manufacturing:line_master'),
+            'display_pagination': display_pagination
+        })
+        
+        return context
 
     def get_preserved_context(self, request):
         """現在のページと検索条件を保持したコンテキストを取得"""
@@ -107,12 +120,28 @@ class LineMasterView(TemplateView):
         
         page_obj = paginator.get_page(page_number)
         
-        from django.urls import reverse
-        
+        # データの整形
+        formatted_data = []
+        for line in page_obj:
+            formatted_data.append({
+                'id': line.id,
+                'fields': [
+                    line.name,
+                    str(line.x_position),
+                    str(line.y_position),
+                    str(line.width),
+                    str(line.height),
+                    '有効' if line.active else '無効'
+                ],
+                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': line.id}),
+                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': line.id}),
+                'name': line.name
+            })
         return {
-            'data': page_obj,
+            'data': formatted_data,
             'search_query': search_query,
             'form_action_url': reverse('manufacturing:line_master'),
+            'headers': ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作']
         }
 
     def post(self, request, *args, **kwargs):
@@ -143,15 +172,31 @@ class LineMasterView(TemplateView):
                     'message': f'エラーが発生しました: {str(e)}'
                 }, status=400)
         else:
-              # 新規登録処理
-              context = self.get_preserved_context(request)
-              html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
-              
-              return JsonResponse({
-                  'status': 'success',
-                  'message': 'ラインが正常に登録されました。',
-                  'html': html
-              })
+            # 新規登録処理
+            try:
+                line = Line.objects.create(
+                    name=request.POST.get('name'),
+                    x_position=int(request.POST.get('x_position', 0)),
+                    y_position=int(request.POST.get('y_position', 0)),
+                    width=int(request.POST.get('width', 100)),
+                    height=int(request.POST.get('height', 100)),
+                    active=request.POST.get('active') == 'on'
+                )
+                
+                # 現在のページ情報を保持してコンテキストを生成
+                context = self.get_preserved_context(request)
+                html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
+                
+                return JsonResponse({
+                    'status': 'success',
+                    'message': 'ラインが正常に登録されました。',
+                    'html': html
+                })
+            except Exception as e:
+                return JsonResponse({
+                    'status': 'error',
+                    'message': f'エラーが発生しました: {str(e)}'
+                }, status=400)
 
     def delete(self, request, *args, **kwargs):
         try:
