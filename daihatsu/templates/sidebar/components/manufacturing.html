@@ -49,8 +49,8 @@
       </a>
       <a
         class="nav-link {% if 'manufacturing:machine_master' in request.resolver_match.url_name %}active{% endif %}"
-        href="{% url 'manufacturing:machine_master' %}"
-        hx-get="{% url 'manufacturing:machine_master' %}"
+        href="{% url 'manufacturing:line_master' %}"
+        hx-get="{% url 'manufacturing:line_master' %}"
         hx-target=".main-content"
         hx-push-url="true"
       >

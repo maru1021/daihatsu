@@ -1,18 +1,7 @@
-{% comment %}
-汎用的なテーブルヘッダーコンポーネント
-
-パラメータ:
-- title: ページタイトル
-- search_placeholder: 検索ボックスのプレースホルダー
-- search_url: 検索URL
-- search_query: 現在の検索クエリ
-- add_button_text: 新規追加ボタンのテキスト
-- add_button_target: 新規追加モーダルのID
-- columns: カラム名のリスト
-{% endcomment %}
-
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h1 class="h3 mb-0">{{ title|default:"一覧" }}</h1>
+    <div class="page-title">
+        <h1 class="h3 mb-0">{{ title }}</h1>
+    </div>
     <div class="d-flex gap-2">
         {% if search_url %}
         <!-- 検索フォーム -->
@@ -30,7 +19,7 @@
             </div>
         </form>
         {% endif %}
-        
+
         {% if add_button_text and add_button_target %}
         <!-- 新規追加ボタン -->
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ add_button_target }}">
@@ -39,14 +28,3 @@
         {% endif %}
     </div>
 </div>
-
-<thead>
-    <tr>
-        {% for column in columns %}
-        <th>{{ column }}</th>
-        {% endfor %}
-        {% if show_actions %}
-        <th>操作</th>
-        {% endif %}
-    </tr>
-</thead> 

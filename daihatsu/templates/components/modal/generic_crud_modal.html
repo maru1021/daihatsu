@@ -1,16 +1,3 @@
-{% comment %}
-汎用的なCRUDモーダルコンポーネント
-
-パラメータ:
-- modal_id: モーダルのID
-- modal_title: モーダルのタイトル
-- form_id: フォームのID
-- form_action_url: フォームの送信先URL
-- form_template: フォームフィールドのテンプレート
-- submit_text: 送信ボタンのテキスト
-- modal_size: モーダルのサイズ（lg, sm, xl等）
-{% endcomment %}
-
 <div class="modal fade" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog{% if modal_size %} modal-{{ modal_size }}{% endif %}">
         <div class="modal-content">

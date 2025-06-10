@@ -10,7 +10,6 @@ import { modalHandlers } from './modal/form_reset.js';
 import { initializeEditForm } from './modal/form_initialize.js';
 
 // グローバル変数
-let tableMasterInitialized = false;
 let htmxInitTimeout = null;
 
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
@@ -142,6 +141,8 @@ function handleEditItem(e, editBtn) {
                     initializeEditForm(data);
                 }
 
+                // モーダルを表示する前にクリーンアップ
+                cleanupModals();
                 const modal = showModal('EditModal');
 
                 // 編集フォームの送信処理
@@ -169,7 +170,8 @@ function handleEditFormSubmit(e, editForm, modal) {
     e.preventDefault();
     
     submitForm(editForm, editForm.action, (data) => {
-        modal.hide();
+        hideModal('EditModal');
+        cleanupModals();
         modalHandlers.resetEditForm(editForm);
         showToast('success', data.message);
         
@@ -209,6 +211,7 @@ function handleDeleteItem(e, deleteBtn) {
         newConfirmBtn.addEventListener('click', function() {
             performDelete(deleteUrl, (data) => {
                 hideModal('DeleteModal');
+                cleanupModals();
                 showToast('success', data.message);
                 
                 if (data.html) {
@@ -223,16 +226,15 @@ function handleDeleteItem(e, deleteBtn) {
         });
     }
     
-    // モーダルを表示
+    // モーダルを表示する前にクリーンアップ
+    cleanupModals();
     showModal('DeleteModal');
 }
 
 // DOMContentLoaded時の初期化
 document.addEventListener('DOMContentLoaded', function() {
-    if (!tableMasterInitialized) {
-        initializeTableMasterPage();
-        tableMasterInitialized = true;
-    }
+    cleanupModals();
+    initializeTableMasterPage();
 });
 
 // HTMXスワップ後の初期化
@@ -245,9 +247,8 @@ document.addEventListener('htmx:afterSwap', function(evt) {
         
         // 少し遅延して実行（重複を防ぐため）
         htmxInitTimeout = setTimeout(() => {
-            tableMasterInitialized = false; // リセット
+            cleanupModals();
             initializeTableMasterPage();
-            tableMasterInitialized = true;
         }, 0);
     }
 });

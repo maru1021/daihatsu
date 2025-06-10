@@ -110,6 +110,19 @@ body {
     box-sizing: border-box !important;
 } 
 
+.page-title {
+  position: relative;
+}
+
+.page-title h1 {
+  font-weight: 600;
+  color: #2c3e50;
+  letter-spacing: 0.5px;
+  font-size: 1.75rem;
+  margin: 0;
+  padding: 0;
+}
+
 /* トースト */
 .toast {
   min-width: 300px;
