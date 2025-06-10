@@ -1,0 +1,111 @@
+:root {
+    --sidebar-width: 280px;
+    --sidebar-bg: #2c3e50;
+    --sidebar-hover: #34495e;
+    --text-color: #ecf0f1;
+}
+
+body {
+    font-family: "Helvetica Neue", Arial, sans-serif;
+}
+
+/* サイドバー */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    background-color: var(--sidebar-bg);
+    color: var(--text-color);
+    padding-top: 1rem;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.sidebar-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 1rem;
+}
+
+.sidebar-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.nav-link {
+    padding: 0.8rem 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.nav-link:link,
+.nav-link:visited,
+.nav-link:focus,
+.nav-link:active,
+.nav-link[data-bs-toggle="collapse"]:link,
+.nav-link[data-bs-toggle="collapse"]:visited,
+.nav-link[data-bs-toggle="collapse"]:focus,
+.nav-link[data-bs-toggle="collapse"]:active,
+.submenu .nav-link:link,
+.submenu .nav-link:visited,
+.submenu .nav-link:focus,
+.submenu .nav-link:active {
+    color: var(--text-color);
+}
+
+.nav-link i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+
+.nav-link:hover {
+    background-color: var(--sidebar-hover);
+    padding-left: 2rem;
+}
+
+.nav-link[data-bs-toggle="collapse"]:hover {
+    background-color: var(--sidebar-hover);
+}
+
+.submenu .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+    padding-left: 1.5rem;
+}
+
+.nav-item:last-child {
+    margin-top: 2rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 1rem;
+}
+
+.submenu {
+    padding-left: 2.5rem;
+    display: none;
+}
+
+.submenu.show {
+    display: block;
+}
+
+.nav-link[data-bs-toggle="collapse"]::after {
+    content: "\f107";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    position: absolute;
+    right: 1.5rem;
+}
+
+/* メインコンテンツ */
+.main-content {
+    margin-left: var(--sidebar-width) !important;
+    padding: 2rem !important;
+    min-height: 100vh !important;
+    background-color: #f8f9fa !important;
+    width: auto !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+} 

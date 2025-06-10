@@ -29,7 +29,7 @@ function initializeTableMasterPage() {
             e.preventDefault();
             
             // URLを動的に取得
-            const createUrl = registerForm.getAttribute('data-create-url') || registerForm.action;
+            const createUrl = registerForm.action;
             
             submitForm(registerForm, createUrl, (data, pageInfo) => {
                 hideModal('RegisterModal');
@@ -96,7 +96,7 @@ function initializeSearchForm() {
         searchInput._searchInitialized = true;
         
         // URLを動的に取得
-        const searchUrl = searchInput.getAttribute('data-search-url') || '/manufacturing/master/';
+        const searchUrl = searchInput.getAttribute('data-search-url');
         
         searchInput.addEventListener('input', function() {
             const searchQuery = this.value;
@@ -113,7 +113,7 @@ function initializeSearchForm() {
     }
 }
 
-// テーブルイベント（編集・削除）の初期化
+// 編集・削除の初期化
 function initializeTableEvents() {
     // 既存のイベントリスナーを削除
     const oldHandler = document.body._tableClickHandler;
@@ -147,8 +147,7 @@ function handleEditItem(e, editBtn) {
     e.preventDefault();
     e.stopPropagation();
     
-    const itemId = editBtn.getAttribute('data-item-id');
-    const editUrl = editBtn.getAttribute('data-edit-url') || `/manufacturing/master/edit/${itemId}/`;
+    const editUrl = editBtn.getAttribute('data-edit-url');
     
     // サーバーからアイテムの情報を取得
     fetch(editUrl)
@@ -213,9 +212,8 @@ function handleDeleteItem(e, deleteBtn) {
     e.preventDefault();
     e.stopPropagation();
     
-    const itemId = deleteBtn.getAttribute('data-item-id');
     const itemName = deleteBtn.getAttribute('data-item-name');
-    const deleteUrl = deleteBtn.getAttribute('data-delete-url') || `/manufacturing/master/delete/${itemId}/`;
+    const deleteUrl = deleteBtn.getAttribute('data-delete-url');
     
     // 既存の削除モーダルを使用
     const deleteModal = document.getElementById('DeleteModal');

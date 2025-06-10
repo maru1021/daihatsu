@@ -15,7 +15,7 @@ export function initializeEditForm(data) {
         return;
     }
 
-    // フォームの各フィールドに値を設定
+    // 編集時フォームの各フィールドに値を設定
     const formData = data.data;
     for (const [key, value] of Object.entries(formData)) {
         const input = form.querySelector(`[name="${key}"]`);

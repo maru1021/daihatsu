@@ -55,33 +55,34 @@ class LineMasterView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['headers'] = ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作']
-        lines = Line.objects.all().order_by('id')
+        data = Line.objects.all().order_by('id')
         
         # 検索処理
         search_query = self.request.GET.get('search', '')
         if search_query:
-            lines = lines.filter(name__icontains=search_query)
+            data = data.filter(name__icontains=search_query)
         
-        paginator = Paginator(lines, 10)
+        paginator = Paginator(data, 10)
         page_number = self.request.GET.get('page', 1)
         page_obj = paginator.get_page(page_number)
-        display_pagination = True if lines.count() > 10 else False
+        # データが10件以上ならページネーションを表示
+        display_pagination = True if data.count() > 10 else False
         
         formatted_data = []
-        for line in page_obj:
+        for row in page_obj:
             formatted_data.append({
-                'id': line.id,
+                'id': row.id,
                 'fields': [
-                    line.name,
-                    str(line.x_position),
-                    str(line.y_position),
-                    str(line.width),
-                    str(line.height),
-                    '有効' if line.active else '無効'
+                    row.name,
+                    row.x_position,
+                    row.y_position,
+                    row.width,
+                    row.height,
+                    '有効' if row.active else '無効'
                 ],
-                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': line.id}),
-                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': line.id}),
-                'name': line.name,
+                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': row.id}),
+                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': row.id}),
+                'name': row.name,
             })
         
         context.update({
@@ -99,14 +100,14 @@ class LineMasterView(TemplateView):
         current_page = request.POST.get('current_page') or request.GET.get('page', '1')
         search_query = request.POST.get('search_query') or request.GET.get('search', '')
         
-        lines = Line.objects.all().order_by('id')
-        display_pagination = True if lines.count() > 10 else False
+        data = Line.objects.all().order_by('id')
+        display_pagination = True if data.count() > 10 else False
         
         # 検索処理
         if search_query:
-            lines = lines.filter(name__icontains=search_query)
+            data = data.filter(name__icontains=search_query)
         
-        paginator = Paginator(lines, 10)
+        paginator = Paginator(data, 10)
         
         # ページ番号を整数に変換し、範囲をチェック
         try:
@@ -123,20 +124,20 @@ class LineMasterView(TemplateView):
         
         # データの整形
         formatted_data = []
-        for line in page_obj:
+        for row in page_obj:
             formatted_data.append({
-                'id': line.id,
+                'id': row.id,
                 'fields': [
-                    line.name,
-                    str(line.x_position),
-                    str(line.y_position),
-                    str(line.width),
-                    str(line.height),
-                    '有効' if line.active else '無効'
+                    row.name,
+                    row.x_position,
+                    row.y_position,
+                    row.width,
+                    row.height,
+                    '有効' if row.active else '無効'
                 ],
-                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': line.id}),
-                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': line.id}),
-                'name': line.name
+                'edit_url': reverse('manufacturing:line_edit', kwargs={'pk': row.id}),
+                'delete_url': reverse('manufacturing:line_delete', kwargs={'pk': row.id}),
+                'name': row.name
             })
         return {
             'data': formatted_data,
@@ -155,8 +156,8 @@ class LineMasterView(TemplateView):
                 line.name = request.POST.get('name')
                 line.x_position = int(request.POST.get('x_position', 0))
                 line.y_position = int(request.POST.get('y_position', 0))
-                line.width = int(request.POST.get('width', 100))
-                line.height = int(request.POST.get('height', 100))
+                line.width = int(request.POST.get('width', 0))
+                line.height = int(request.POST.get('height', 0))
                 line.active = request.POST.get('active') == 'on'
                 line.save()
                 
@@ -181,12 +182,12 @@ class LineMasterView(TemplateView):
                     name=request.POST.get('name'),
                     x_position=int(request.POST.get('x_position', 0)),
                     y_position=int(request.POST.get('y_position', 0)),
-                    width=int(request.POST.get('width', 100)),
-                    height=int(request.POST.get('height', 100)),
+                    width=int(request.POST.get('width', 0)),
+                    height=int(request.POST.get('height', 0)),
                     active=request.POST.get('active') == 'on'
                 )
                 
-                # 現在のページ情報を保持してコンテキストを生成
+                # 現在のページ情報を保持してコンテキストを生成(ここを消すと登録時にリロードしないとデータが更新されなくなる)
                 context = self.get_preserved_context(request)
                 html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
                 
@@ -223,13 +224,12 @@ class LineMasterView(TemplateView):
             if search_query is None:
                 search_query = ''
             
-            # 一時的にPOSTデータとして設定（get_preserved_contextで使用）
             from django.http import QueryDict
             request.POST = QueryDict(mutable=True)
             request.POST['current_page'] = current_page
             request.POST['search_query'] = search_query
             
-            # 現在のページ情報を保持してコンテキストを生成
+            # 現在のページ情報を保持してコンテキストを生成(ここを消すと削除時にリロードしないとデータが更新されなくなる)
             context = self.get_preserved_context(request)
             html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
             

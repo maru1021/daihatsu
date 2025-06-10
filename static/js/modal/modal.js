@@ -1,8 +1,4 @@
 /**
- * モーダル操作の共通関数
- */
-
-/**
  * モーダルを表示する
  * @param {string} modalId - モーダルのID
  * @returns {bootstrap.Modal} - Bootstrapモーダルインスタンス

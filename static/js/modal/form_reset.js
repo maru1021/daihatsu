@@ -13,11 +13,8 @@ export const modalHandlers = {
         
         // 各入力要素をリセット
         inputs.forEach(input => {
-            if (input.type === 'checkbox' || input.type === 'radio') {
-                // チェックボックスとラジオボタンはデフォルト値に設定
-                input.checked = input.defaultChecked;
-            } else if (input.type === 'number') {
-                // 数値入力は1に設定
+            if (input.type === 'number') {
+                // 数値入力は0に設定
                 input.value = '0';
             } else if (input.type === 'text' || input.type === 'textarea') {
                 // テキスト入力は空に設定
