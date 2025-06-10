@@ -109,3 +109,52 @@ body {
     max-width: none !important;
     box-sizing: border-box !important;
 } 
+
+.toast {
+  min-width: 300px;
+  background: transparent;
+  border: none;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.toast-header {
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+.toast-body {
+  padding: 1rem;
+  font-size: 0.95rem;
+  color: #2c3e50;
+  border-bottom-left-radius: 0.5rem;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.btn-close {
+  opacity: 0.8;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.btn-close:hover {
+  opacity: 1;
+}
+
+/* アニメーション */
+.toast.showing {
+  opacity: 0;
+  transform: translateX(100%);
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(0);
+  transition: all 0.3s ease-in-out;
+}
+
+.toast.hide {
+  opacity: 0;
+  transform: translateX(100%);
+  transition: all 0.3s ease-in-out;
+}

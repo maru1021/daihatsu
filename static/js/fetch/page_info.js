@@ -15,7 +15,6 @@ export function getBasePageInfo() {
     if (urlPage) {
         currentPage = urlPage;
     }
-    console.log(currentPage);
     
     if (urlSearch !== null) {
         currentSearch = urlSearch;
