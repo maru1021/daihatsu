@@ -110,6 +110,7 @@ body {
     box-sizing: border-box !important;
 } 
 
+/* トースト */
 .toast {
   min-width: 300px;
   background: transparent;

@@ -14,41 +14,32 @@ let tableMasterInitialized = false;
 let htmxInitTimeout = null;
 
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
-function initializeTableMasterPage() {    
-    // 既存のイベントリスナーを削除（重複防止）
-    const existingForm = document.getElementById('RegisterForm');
-    if (existingForm && existingForm._formInitialized) {
-        return;
-    }
-
+function initializeTableMasterPage() {
     // 新規追加フォームの送信処理
     const registerForm = document.getElementById('RegisterForm');
-    if (registerForm && !registerForm._formInitialized) {
-        registerForm._formInitialized = true;
-        registerForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // URLを動的に取得
-            const createUrl = registerForm.action;
-            
-            submitForm(registerForm, createUrl, (data, pageInfo) => {
-                hideModal('RegisterModal');
-                setTimeout(cleanupModals, 300);
-                
-                modalHandlers.resetRegisterForm(registerForm);
-                showToast('success', data.message);
-                
-                if (data.html) {
-                    document.getElementById('TableContainer').innerHTML = data.html;
-                    initializePaginationEvents();
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showToast('error', error.message || 'エラーが発生しました。');
-            });
+
+    registerForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // URLを動的に取得
+        const createUrl = registerForm.action;
+
+        submitForm(registerForm, createUrl, (data) => {
+            hideModal('RegisterModal');
+
+            modalHandlers.resetRegisterForm(registerForm);
+            showToast('success', data.message);
+
+            if (data.html) {
+                document.getElementById('TableContainer').innerHTML = data.html;
+                initializePaginationEvents();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('error', error.message || 'エラーが発生しました。');
         });
-    }
+    });
 
     // ページネーションのイベント初期化
     initializePaginationEvents();
@@ -60,47 +51,42 @@ function initializeTableMasterPage() {
     initializeTableEvents();
 }
 
-// ページネーションのイベント初期化
+// ページネーションの処理
 function initializePaginationEvents() {
     document.querySelectorAll('.pagination a').forEach(link => {
-        if (!link._paginationInitialized) {
-            link._paginationInitialized = true;
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                const url = this.href;
-                
-                // URLを更新してからHTMXリクエストを送信
-                window.history.pushState({}, '', url);
-                
-                fetch(url, {
-                    headers: { 'HX-Request': 'true' }
-                })
-                .then(response => response.text())
-                .then(html => {
-                    document.getElementById('TableContainer').innerHTML = html;
-                    initializePaginationEvents();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showToast('error', 'ページの読み込みに失敗しました。');
-                });
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.href;
+            
+            // URLを更新してからHTMXリクエストを送信
+            window.history.pushState({}, '', url);
+            
+            fetch(url, {
+                headers: { 'HX-Request': 'true' }
+            })
+            .then(response => response.text())
+            .then(html => {
+                document.getElementById('TableContainer').innerHTML = html;
+                initializePaginationEvents();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('error', 'ページの読み込みに失敗しました。');
             });
-        }
+        });
     });
 }
 
 // 検索フォームの処理
 function initializeSearchForm() {
     const searchInput = document.querySelector('input[name="search"]');
-    if (searchInput && !searchInput._searchInitialized) {
-        searchInput._searchInitialized = true;
-        
+    if (searchInput) {
         // URLを動的に取得
         const searchUrl = searchInput.getAttribute('data-search-url');
-        
+
         searchInput.addEventListener('input', function() {
             const searchQuery = this.value;
-            
+
             performSearch(searchUrl, searchQuery)
                 .then(() => {
                     initializePaginationEvents();
@@ -115,12 +101,6 @@ function initializeSearchForm() {
 
 // 編集・削除の初期化
 function initializeTableEvents() {
-    // 既存のイベントリスナーを削除
-    const oldHandler = document.body._tableClickHandler;
-    if (oldHandler) {
-        document.removeEventListener('click', oldHandler);
-    }
-    
     // 新しいイベントリスナーを作成
     const clickHandler = function(e) {
         // 編集ボタンの処理
@@ -138,7 +118,6 @@ function initializeTableEvents() {
     };
     
     // イベントリスナーを保存して追加
-    document.body._tableClickHandler = clickHandler;
     document.addEventListener('click', clickHandler);
 }
 
@@ -155,28 +134,26 @@ function handleEditItem(e, editBtn) {
         .then(data => {
             if (data.status === 'success') {
                 const editModal = document.getElementById('EditModal');
-                if (editModal) {
-                    const form = editModal.querySelector('form');
-                    if (form) {
-                        form.action = editUrl;
-                        
-                        // フォームの初期化
-                        initializeEditForm(data);
-                    }
-                    
-                    const modal = showModal('EditModal');
-                    
-                    // 編集フォームの送信処理
-                    if (form) {
-                        // 既存のイベントリスナーを削除
-                        const newForm = form.cloneNode(true);
-                        form.parentNode.replaceChild(newForm, form);
-                        
-                        // 新しいイベントリスナーを追加
-                        newForm.addEventListener('submit', function(e) {
-                            handleEditFormSubmit(e, newForm, modal);
-                        });
-                    }
+                const form = editModal.querySelector('form');
+                if (form) {
+                    form.action = editUrl;
+
+                    // フォームの初期化
+                    initializeEditForm(data);
+                }
+
+                const modal = showModal('EditModal');
+
+                // 編集フォームの送信処理
+                if (form) {
+                    // 既存のイベントリスナーを削除
+                    const newForm = form.cloneNode(true);
+                    form.parentNode.replaceChild(newForm, form);
+
+                    // 新しいイベントリスナーを追加
+                    newForm.addEventListener('submit', function(e) {
+                        handleEditFormSubmit(e, newForm, modal);
+                    });
                 }
             } else {
                 showToast('error', 'アイテムの情報を取得できませんでした。');
@@ -191,7 +168,7 @@ function handleEditItem(e, editBtn) {
 function handleEditFormSubmit(e, editForm, modal) {
     e.preventDefault();
     
-    submitForm(editForm, editForm.action, (data, pageInfo) => {
+    submitForm(editForm, editForm.action, (data) => {
         modal.hide();
         modalHandlers.resetEditForm(editForm);
         showToast('success', data.message);
@@ -217,10 +194,6 @@ function handleDeleteItem(e, deleteBtn) {
     
     // 既存の削除モーダルを使用
     const deleteModal = document.getElementById('DeleteModal');
-    if (!deleteModal) {
-        console.error('削除モーダルが見つかりません');
-        return;
-    }
     
     // モーダルのメッセージを更新
     updateModalMessage('DeleteModal', `本当に「${itemName}」を削除してもよろしいですか？`);
@@ -234,7 +207,7 @@ function handleDeleteItem(e, deleteBtn) {
         
         // 新しいイベントリスナーを追加
         newConfirmBtn.addEventListener('click', function() {
-            performDelete(deleteUrl, (data, pageInfo) => {
+            performDelete(deleteUrl, (data) => {
                 hideModal('DeleteModal');
                 showToast('success', data.message);
                 
@@ -275,6 +248,6 @@ document.addEventListener('htmx:afterSwap', function(evt) {
             tableMasterInitialized = false; // リセット
             initializeTableMasterPage();
             tableMasterInitialized = true;
-        }, 200);
+        }, 0);
     }
 });
