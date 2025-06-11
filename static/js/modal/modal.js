@@ -1,4 +1,8 @@
 /**
+ * モーダル操作の共通関数
+ */
+
+/**
  * モーダルを表示する
  * @param {string} modalId - モーダルのID
  * @returns {bootstrap.Modal} - Bootstrapモーダルインスタンス
@@ -11,6 +15,27 @@ export function showModal(modalId) {
     }
     
     const modal = new bootstrap.Modal(modalElement);
+    
+    // モーダルが表示された後に最初のinputにフォーカスを当てる
+    modalElement.addEventListener('shown.bs.modal', function() {
+        const firstInput = modalElement.querySelector('input:not([type="hidden"]), select, textarea');
+        if (firstInput) {
+            firstInput.focus();
+        }
+    }, { once: true });
+
+    // バツボタンクリック時のフォーカス制御
+    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // 検索フォームのinputにフォーカスを移動
+            const searchInput = document.querySelector('input[data-search-url]');
+            if (searchInput) {
+                searchInput.focus();
+            }
+        });
+    });
+    
     modal.show();
     return modal;
 }
@@ -28,6 +53,12 @@ export function hideModal(modalId) {
     
     const modal = bootstrap.Modal.getInstance(modalElement);
     if (modal) {
+        // 検索フォームのinputにフォーカスを移動
+        const searchInput = document.querySelector('input[data-search-url]');
+        if (searchInput) {
+            searchInput.focus();
+        }
+        
         modal.hide();
     }
 }
@@ -44,6 +75,12 @@ export function cleanupModals() {
     document.body.classList.remove('modal-open');
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
+    
+    // 検索フォームのinputにフォーカスを移動
+    const searchInput = document.querySelector('input[data-search-url]');
+    if (searchInput) {
+        searchInput.focus();
+    }
 }
 
 /**

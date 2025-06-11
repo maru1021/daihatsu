@@ -9,9 +9,6 @@ import { showModal, hideModal, cleanupModals, updateModalMessage } from './modal
 import { modalHandlers } from './modal/form_reset.js';
 import { initializeEditForm } from './modal/form_initialize.js';
 
-// グローバル変数
-let htmxInitTimeout = null;
-
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
 function initializeTableMasterPage() {
     // 必要な要素が存在するかチェック
@@ -43,7 +40,7 @@ function initializeTableMasterPage() {
             hideModal('RegisterModal');
             cleanupModals();
             showToast('success', data.message);
-            
+
             if (data.html) {
                 document.getElementById('TableContainer').innerHTML = data.html;
                 initializePaginationEvents();
@@ -100,6 +97,12 @@ function initializePaginationEvents() {
             .then(html => {
                 document.getElementById('TableContainer').innerHTML = html;
                 initializePaginationEvents();
+                
+                // 検索フォームのinputにフォーカスを移動
+                const searchInput = document.querySelector('input[data-search-url]');
+                if (searchInput) {
+                    searchInput.focus();
+                }
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -291,30 +294,4 @@ function handleDeleteItem(e, deleteBtn) {
 document.addEventListener('DOMContentLoaded', function() {
     cleanupModals();
     initializeTableMasterPage();
-});
-
-// HTMXスワップ後の初期化
-document.addEventListener('htmx:afterSwap', function(evt) {
-    if (evt.detail.target.classList.contains('main-content')) {
-        // 前のタイマーをクリア
-        if (htmxInitTimeout) {
-            clearTimeout(htmxInitTimeout);
-        }
-        
-        // 少し遅延して実行（重複を防ぐため）
-        htmxInitTimeout = setTimeout(() => {
-            cleanupModals();
-            initializeTableMasterPage();
-        }, 0);
-    }
-});
-
-// ページ遷移時のクリーンアップ
-document.addEventListener('htmx:beforeSwap', function(evt) {
-    // 既存のイベントリスナーを削除
-    const tableContainer = document.getElementById('TableContainer');
-    if (tableContainer) {
-        const newTableContainer = tableContainer.cloneNode(true);
-        tableContainer.parentNode.replaceChild(newTableContainer, tableContainer);
-    }
 });
