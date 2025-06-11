@@ -26,11 +26,12 @@ export function submitForm(form, url, successCallback) {
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         }
     })
-    .then(response => {
+    .then(async response => {
+        const data = await response.json();
         if (!response.ok) {
-            throw new Error('Network response was not ok');
+            throw { response, data };
         }
-        return response.json();
+        return data;
     })
     .then(data => {
         if (data.status === 'success') {

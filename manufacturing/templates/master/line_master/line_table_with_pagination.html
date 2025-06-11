@@ -1,8 +1,2 @@
-<!-- master/line_master/line_table_with_pagination.html - 修正版 -->
-{% load static %}
-
-<!-- ページ情報を保持する隠し要素 -->
-<input type="hidden" id="currentPageNumber" value="{{ data.number|default:'1' }}">
-<input type="hidden" id="currentSearchQuery" value="{{ search_query|default:'' }}">
-
-{% include "components/table/generic_table.html" with data=data search_query=search_query headers=headers empty_message="ラインが見つかりません" empty_sub_message="まだラインが登録されていません。" %}
+<!-- 検索、ページネーション時などに使用 -->
+{% include "components/table/generic_table.html" with title="ライン" %}

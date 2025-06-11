@@ -14,29 +14,62 @@ let htmxInitTimeout = null;
 
 // ページ初期化関数（HTMXナビゲーション後の再初期化用）
 function initializeTableMasterPage() {
-    // 新規追加フォームの送信処理
+    // 必要な要素が存在するかチェック
     const registerForm = document.getElementById('RegisterForm');
+    const registerModal = document.getElementById('RegisterModal');
+    const tableContainer = document.getElementById('TableContainer');
+
+    // 必要な要素が存在しない場合は初期化をスキップ
+    if (!registerForm || !registerModal || !tableContainer) {
+        return;
+    }
+
+    // 新規追加フォームの送信処理
+    // モーダルを開く前にフォームをリセット
+    registerModal.addEventListener('show.bs.modal', function() {
+        modalHandlers.resetRegisterForm(registerForm);
+    });
 
     registerForm.addEventListener('submit', function(e) {
         e.preventDefault();
+
+        // 既存のエラーメッセージをクリア
+        modalHandlers.clearFormErrors(registerForm);
 
         // URLを動的に取得
         const createUrl = registerForm.action;
 
         submitForm(registerForm, createUrl, (data) => {
             hideModal('RegisterModal');
-
-            modalHandlers.resetRegisterForm(registerForm);
+            cleanupModals();
             showToast('success', data.message);
-
+            
             if (data.html) {
                 document.getElementById('TableContainer').innerHTML = data.html;
                 initializePaginationEvents();
             }
         })
         .catch(error => {
-            console.error('Error:', error);
-            showToast('error', error.message || 'エラーが発生しました。');
+            if (error.response && error.response.status === 400) {
+                // バリデーションエラーの場合
+                if (error.data.errors) {
+                    // エラーメッセージを表示
+                    Object.entries(error.data.errors).forEach(([field, message]) => {
+                        const input = registerForm.querySelector(`[name="${field}"]`);
+                        if (input) {
+                            input.classList.add('is-invalid');
+                            const feedback = document.createElement('div');
+                            feedback.className = 'invalid-feedback d-block';
+                            feedback.textContent = message;
+                            input.parentNode.appendChild(feedback);
+                        }
+                    });
+                }
+            } else {
+                console.error('Error:', error);
+                // 予期せぬエラーの場合のみトーストを表示
+                showToast('error', error.message || 'エラーが発生しました。');
+            }
         });
     });
 
@@ -169,10 +202,15 @@ function handleEditItem(e, editBtn) {
 function handleEditFormSubmit(e, editForm, modal) {
     e.preventDefault();
     
+    // 既存のエラーメッセージをクリア
+    const invalidFeedbacks = editForm.querySelectorAll('.invalid-feedback');
+    invalidFeedbacks.forEach(feedback => feedback.remove());
+    const invalidInputs = editForm.querySelectorAll('.is-invalid');
+    invalidInputs.forEach(input => input.classList.remove('is-invalid'));
+    
     submitForm(editForm, editForm.action, (data) => {
         hideModal('EditModal');
         cleanupModals();
-        modalHandlers.resetEditForm(editForm);
         showToast('success', data.message);
         
         if (data.html) {
@@ -181,8 +219,26 @@ function handleEditFormSubmit(e, editForm, modal) {
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        showToast('error', error.message || 'エラーが発生しました。');
+        if (error.response && error.response.status === 400) {
+            // バリデーションエラーの場合
+            if (error.data.errors) {
+                // エラーメッセージを表示
+                Object.entries(error.data.errors).forEach(([field, message]) => {
+                    const input = editForm.querySelector(`[name="${field}"]`);
+                    if (input) {
+                        input.classList.add('is-invalid');
+                        const feedback = document.createElement('div');
+                        feedback.className = 'invalid-feedback d-block';
+                        feedback.textContent = message;
+                        input.parentNode.appendChild(feedback);
+                    }
+                });
+            }
+        } else {
+            console.error('Error:', error);
+            // 予期せぬエラーの場合のみトーストを表示
+            showToast('error', error.message || 'エラーが発生しました。');
+        }
     });
 }
 
@@ -250,5 +306,15 @@ document.addEventListener('htmx:afterSwap', function(evt) {
             cleanupModals();
             initializeTableMasterPage();
         }, 0);
+    }
+});
+
+// ページ遷移時のクリーンアップ
+document.addEventListener('htmx:beforeSwap', function(evt) {
+    // 既存のイベントリスナーを削除
+    const tableContainer = document.getElementById('TableContainer');
+    if (tableContainer) {
+        const newTableContainer = tableContainer.cloneNode(true);
+        tableContainer.parentNode.replaceChild(newTableContainer, tableContainer);
     }
 });

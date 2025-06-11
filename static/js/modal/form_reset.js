@@ -4,9 +4,25 @@
 
 // モーダル関連の処理
 export const modalHandlers = {
+    // フォームのエラー表示をクリア
+    clearFormErrors: function(form) {
+        if (!form) return;
+        
+        // エラーメッセージをクリア
+        const invalidFeedbacks = form.querySelectorAll('.invalid-feedback');
+        invalidFeedbacks.forEach(feedback => feedback.remove());
+        
+        // is-invalidクラスをクリア
+        const invalidInputs = form.querySelectorAll('.is-invalid');
+        invalidInputs.forEach(input => input.classList.remove('is-invalid'));
+    },
+
     // 登録フォームのリセット
     resetRegisterForm: function(form) {
         if (!form) return;
+        
+        // エラー表示をクリア
+        this.clearFormErrors(form);
         
         // フォーム内のすべての入力要素を取得
         const inputs = form.querySelectorAll('input, select, textarea');
@@ -34,6 +50,9 @@ export const modalHandlers = {
     // 編集フォームのリセット
     resetEditForm: function(form) {
         if (!form) return;
+        
+        // エラー表示をクリア
+        this.clearFormErrors(form);
         
         // フォーム内のすべての入力要素を取得
         const inputs = form.querySelectorAll('input, select, textarea');

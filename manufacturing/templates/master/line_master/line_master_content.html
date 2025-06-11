@@ -1,28 +1,18 @@
-<!-- master/line_master/line_master_content.html - HTMX対応修正版 -->
-{% load static %}
-<!-- HTMXで読み込まれるコンテンツ -->
+<!-- サイト内からのアクセス時 -->
 
 <!-- ヘッダー部分：検索とボタン -->
-{% include "components/table/header.html" with title="ライン管理" search_placeholder="検索..." search_url=request.path search_query=search_query add_button_text="新規ライン追加" add_button_target="RegisterModal" %}
+{% include "components/table/header.html" with title="ライン管理" search_url=request.path add_button_text="新規ライン追加" %}
 
 <!-- コンテンツエリア -->
 <div class="card">
     <div class="card-body">
         <div id="TableContainer">
-            <!-- テーブル部分をgeneric_table.htmlを使用 -->
-            {% include "components/table/generic_table.html" with data=data search_query=search_query headers=headers empty_message="ラインが見つかりません" empty_sub_message="まだラインが登録されていません。" %}
+            {% include 'master/line_master/line_table_with_pagination.html' %}
         </div>
     </div>
 </div>
 
-<!-- 新規追加モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="RegisterModal" modal_title="ライン追加" form_id="RegisterForm" form_action_url=form_action_url form_template="master/line_master/forms/register_form.html" submit_text="登録" %}
-
-<!-- 編集モーダル -->
-{% include "components/modal/generic_crud_modal.html" with modal_id="EditModal" modal_title="ライン編集" form_id="EditForm" form_action_url=form_action_url form_template="master/line_master/forms/edit_form.html" submit_text="更新" %}
-
-<!-- 削除確認モーダル -->
-{% include "components/modal/generic_delete_modal.html" with modal_id="DeleteModal" title="ライン削除の確認" confirm_button_text="削除" %}
+{% include 'components/table/table_modals.html' with modal_title="ライン" form_template="master/line_master/forms" %}
 
 <!-- CSRF Token -->
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">

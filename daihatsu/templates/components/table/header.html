@@ -10,7 +10,7 @@
                 <input type="text" 
                        class="form-control" 
                        name="search" 
-                       placeholder="{{ search_placeholder|default:'検索...' }}" 
+                       placeholder="検索..." 
                        value="{{ search_query }}"
                        data-search-url="{{ search_url }}">
                 <button class="btn btn-outline-secondary" type="button" disabled>
@@ -20,9 +20,9 @@
         </form>
         {% endif %}
 
-        {% if add_button_text and add_button_target %}
+        {% if add_button_text %}
         <!-- 新規追加ボタン -->
-        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#{{ add_button_target }}">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#RegisterModal">
              {{ add_button_text }}
         </button>
         {% endif %}

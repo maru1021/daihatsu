@@ -55,7 +55,7 @@ class LineMasterView(TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['headers'] = ['ライン名', 'X座標', 'Y座標', '幅', '高さ', 'ステータス', '操作']
-        data = Line.objects.all().order_by('id')
+        data = Line.objects.all()
         
         # 検索処理
         search_query = self.request.GET.get('search', '')
@@ -100,7 +100,7 @@ class LineMasterView(TemplateView):
         current_page = request.POST.get('current_page') or request.GET.get('page', '1')
         search_query = request.POST.get('search_query') or request.GET.get('search', '')
         
-        data = Line.objects.all().order_by('id')
+        data = Line.objects.all()
         display_pagination = True if data.count() > 10 else False
         
         # 検索処理
@@ -153,12 +153,32 @@ class LineMasterView(TemplateView):
             # 編集処理
             try:
                 line = get_object_or_404(Line, pk=kwargs['pk'])
-                line.name = request.POST.get('name')
+                name = request.POST.get('name', '').strip()
+                active = request.POST.get('active') == 'on'
+                
+                # バリデーション
+                errors = {}
+                if not name:
+                    errors['name'] = 'ライン名は必須です。'
+                elif active:
+                    # アクティブなラインの中で名前の重複をチェック（自分以外）
+                    existing_line = Line.objects.filter(name=name, active=True).exclude(id=kwargs['pk']).first()
+                    if existing_line:
+                        errors['name'] = 'このライン名は既に使用されています。'
+                
+                if errors:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '入力内容に誤りがあります。',
+                        'errors': errors
+                    }, status=400)
+                
+                line.name = name
                 line.x_position = int(request.POST.get('x_position', 0))
                 line.y_position = int(request.POST.get('y_position', 0))
                 line.width = int(request.POST.get('width', 0))
                 line.height = int(request.POST.get('height', 0))
-                line.active = request.POST.get('active') == 'on'
+                line.active = active
                 line.save()
                 
                 # 現在のページ情報を保持してコンテキストを生成
@@ -178,16 +198,36 @@ class LineMasterView(TemplateView):
         else:
             # 新規登録処理
             try:
+                name = request.POST.get('name', '').strip()
+                active = request.POST.get('active') == 'on'
+                
+                # バリデーション
+                errors = {}
+                if not name:
+                    errors['name'] = 'ライン名は必須です。'
+                elif active:
+                    # アクティブなラインの中で名前の重複をチェック
+                    existing_line = Line.objects.filter(name=name, active=True).first()
+                    if existing_line:
+                        errors['name'] = 'このライン名は既に使用されています。'
+                
+                if errors:
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': '入力内容に誤りがあります。',
+                        'errors': errors
+                    }, status=400)
+                
                 line = Line.objects.create(
-                    name=request.POST.get('name'),
+                    name=name,
                     x_position=int(request.POST.get('x_position', 0)),
                     y_position=int(request.POST.get('y_position', 0)),
                     width=int(request.POST.get('width', 0)),
                     height=int(request.POST.get('height', 0)),
-                    active=request.POST.get('active') == 'on'
+                    active=active
                 )
                 
-                # 現在のページ情報を保持してコンテキストを生成(ここを消すと登録時にリロードしないとデータが更新されなくなる)
+                # 現在のページ情報を保持してコンテキストを生成
                 context = self.get_preserved_context(request)
                 html = render_to_string('master/line_master/line_table_with_pagination.html', context, request=request)
                 
