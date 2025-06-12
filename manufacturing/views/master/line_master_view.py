@@ -6,9 +6,10 @@ from django.core.paginator import Paginator
 from manufacturing.models import Line
 from django.shortcuts import render
 from django.urls import reverse
+from manufacturing.mixin import ManufacturingPermissionMixin
 
 
-class LineMasterView(TemplateView):
+class LineMasterView(ManufacturingPermissionMixin,TemplateView):
     template_name = 'master/line_master/line_master.html'
 
     def get(self, request, *args, **kwargs):

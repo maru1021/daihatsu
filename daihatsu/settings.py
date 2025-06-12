@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'daihatsu',
     'manufacturing.apps.ManufacturingConfig',
 ]
 
@@ -183,3 +184,9 @@ STATICFILES_FINDERS = [
 if DEBUG:
     # 静的ファイルのキャッシュも無効化
     STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.StaticFilesStorage'
+
+
+# ログイン関連の設定
+LOGIN_URL = '/auth/login'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/auth/login'
