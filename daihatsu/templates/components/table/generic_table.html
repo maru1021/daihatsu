@@ -15,6 +15,7 @@
                         {% for field in row.fields %}
                         <td>{{ field }}</td>
                         {% endfor %}
+                        {% if is_admin %}
                         <td>
                             <div class="btn-group" role="group">
                                 <button type="button" 
@@ -32,6 +33,7 @@
                                 </button>
                             </div>
                         </td>
+                        {% endif %}
                     </tr>
                     {% endfor %}
                 </tbody>

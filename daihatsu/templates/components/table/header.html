@@ -20,10 +20,10 @@
         </form>
         {% endif %}
 
-        {% if add_button_text %}
+        {% if is_admin %}
         <!-- 新規追加ボタン -->
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#RegisterModal">
-             {{ add_button_text }}
+             {{ add_button_text|default:"登録" }}
         </button>
         {% endif %}
     </div>
