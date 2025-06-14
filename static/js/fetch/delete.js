@@ -14,7 +14,12 @@ export function performDelete(deleteUrl, successCallback) {
     
     return fetch(deleteUrlObj.toString(), {
         method: 'DELETE',
+        body: JSON.stringify({
+            'current_page': pageInfo.page,
+            'search_query': pageInfo.search
+        }),
         headers: {
+            'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
         }

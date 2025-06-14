@@ -49,13 +49,13 @@
       </a>
       <a
         class="nav-link {% if 'manufacturing:machine_master' in request.resolver_match.url_name %}active{% endif %}"
-        href="{% url 'manufacturing:line_master' %}"
-        hx-get="{% url 'manufacturing:line_master' %}"
+        href="{% url 'manufacturing:machine_master' %}"
+        hx-get="{% url 'manufacturing:machine_master' %}"
         hx-target=".main-content"
         hx-push-url="true"
       >
         <i class="fas fa-cogs"></i>
-        加工機管理
+        設備管理
       </a>
     </div>
   </div>

@@ -65,6 +65,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'daihatsu.middleware.PerformanceMiddleware',  # パフォーマンス監視ミドルウェアを追加
 ]
 
 ROOT_URLCONF = 'daihatsu.urls'
@@ -190,3 +191,43 @@ if DEBUG:
 LOGIN_URL = '/auth/login'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/auth/login'
+
+# ログ設定
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'sql': {
+            'format': '%(asctime)s - %(message)s',
+            'datefmt': '%Y-%m-%d %H:%M:%S',
+        },
+    },
+    'handlers': {
+        'sql_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': 'log/sql.log',
+            'formatter': 'sql',
+            'encoding': 'utf-8',
+        },
+    },
+    'filters': {
+        'sql_filter': {
+            '()': 'daihatsu.log.SQLFilter',
+        },
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['sql_file'],
+            'level': 'DEBUG',
+            'propagate': False,
+            'filters': ['sql_filter'],
+        },
+    },
+}
+
+# 開発環境でのSQLログ出力設定
+if DEBUG:
+    LOGGING['loggers']['django.db.backends']['level'] = 'DEBUG'
+else:
+    LOGGING['loggers']['django.db.backends']['level'] = 'INFO'

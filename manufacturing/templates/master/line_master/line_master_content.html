@@ -12,7 +12,9 @@
     </div>
 </div>
 
-{% include 'components/table/table_modals.html' with modal_title="ライン" form_template="master/line_master/forms" %}
+{% if is_admin %}
+    {% include 'components/table/table_modals.html' with modal_title="ライン" form_template="master/line_master/forms" %}
+{% endif %}
 
 <!-- CSRF Token -->
 <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">

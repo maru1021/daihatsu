@@ -4,11 +4,12 @@ from django.views.generic import TemplateView
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.auth import views as auth_views
+from daihatsu.login import CustomLoginView, CustomLogoutView
 
 urlpatterns = [
     path('', TemplateView.as_view(template_name='home.html'), name='home'),
-    path('auth/login', auth_views.LoginView.as_view(template_name='auth/login.html'), name='login'),
-    path('auth/logout', auth_views.LogoutView.as_view(), name='logout'),
+    path('auth/login', CustomLoginView.as_view(template_name='auth/login.html'), name='login'),
+    path('auth/logout', CustomLogoutView.as_view(), name='logout'),
     path('admin/', admin.site.urls),
     path('manufacturing/', include('manufacturing.urls')),
 ]

@@ -1,11 +1,13 @@
 from django.shortcuts import get_object_or_404
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.views.generic import TemplateView
 from django.core.paginator import Paginator
 from django.shortcuts import render
 from django.urls import reverse
 from django.db.models import Q
+import json
+from daihatsu.log import error_logger
 
 
 class BasicTableView(TemplateView):
@@ -40,30 +42,38 @@ class BasicTableView(TemplateView):
         pass
 
     def get(self, request, *args, **kwargs):
-      is_htmx = request.headers.get('HX-Request')
-      has_search_param = 'search' in request.GET
-      has_page = request.GET.get('page') is not None
-      pk = kwargs.get('pk')
-      
-      # 編集時の初期値
-      if pk:
-          data = get_object_or_404(self.crud_model, pk=pk)
-          response_data = self.get_edit_data(data)
-          return JsonResponse(response_data)
-      
-      # 検索やページネーション時
-      elif is_htmx and (has_search_param or has_page):
-          context = self.get_context_data(**kwargs)
-          return render(request, self.table_template, context)
-      
-      # 通常アクセス時
-      elif is_htmx:
-          context = self.get_context_data(**kwargs)
-          return render(request, self.content_template, context)
-      
-      # リロード時など
-      self.template_name = self.template_name
-      return super().get(request, *args, **kwargs)
+        try:
+            is_htmx = request.headers.get('HX-Request')
+            has_search_param = 'search' in request.GET
+            has_page = request.GET.get('page') is not None
+            pk = kwargs.get('pk')
+            
+            # 編集時の初期値
+            if pk:
+                data = get_object_or_404(self.crud_model, pk=pk)
+                response_data = self.get_edit_data(data)
+                return JsonResponse(response_data)
+            
+            # 検索やページネーション時
+            elif is_htmx and (has_search_param or has_page):
+                context = self.get_context_data(**kwargs)
+                return render(request, self.table_template, context)
+            
+            # 通常アクセス時
+            elif is_htmx:
+                context = self.get_context_data(**kwargs)
+                return render(request, self.content_template, context)
+            
+            # リロード時など
+            self.template_name = self.template_name
+            return super().get(request, *args, **kwargs)
+        except Exception as e:
+            error_logger.error(f'Get error: {str(e)}', exc_info=True)
+            print(e)
+            return JsonResponse({
+              'status': 'error',
+              'message': f'エラーが発生しました: {str(e)}'
+            }, status=400)
   
     # テーブルに返すデータの整形
     def format_data(self, page_obj, is_admin=True):
@@ -77,50 +87,60 @@ class BasicTableView(TemplateView):
         return query
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        is_admin = self.has_admin_permission(self.request.user)
-        context['headers'] = self.admin_table_header if is_admin else self.user_table_header
-        data = self.table_model.objects.all()
-        
-        # 検索処理
-        search_query = self.request.GET.get('search', '')
-        if search_query:
-            data = data.filter(self.get_search_query(search_query))
-        
-        paginator = Paginator(data, 10)
-        page_number = self.request.GET.get('page', 1)
-        # 1ページに表示するデータ
-        page_obj = paginator.get_page(page_number)
-        # データが10件以上ならページネーションを表示
-        display_pagination = True if data.count() > 10 else False
-        
-        formatted_data = self.format_data(page_obj, is_admin)
-        
-        context.update({
-            'data': formatted_data,
-            'page_obj': page_obj,
-            'search_query': search_query,
-            'form_action_url': reverse(self.form_action_url),
-            'display_pagination': display_pagination,
-            'is_admin': is_admin
-        })
-        
-        return context
+        try:
+            context = super().get_context_data(**kwargs)
+            is_admin = self.has_admin_permission(self.request.user)
+            context['headers'] = self.admin_table_header if is_admin else self.user_table_header
+            data = self.table_model
+            
+            # 検索処理
+            search_query = self.request.GET.get('search', '')
+            if search_query:
+                data = data.filter(self.get_search_query(search_query))
+            
+            paginator = Paginator(data, 10)
+            page_number = self.request.GET.get('page', 1)
+            # 1ページに表示するデータ
+            page_obj = paginator.get_page(page_number)
+            # データが10件以上ならページネーションを表示
+            display_pagination = True if data.count() > 10 else False
+            
+            formatted_data = self.format_data(page_obj, is_admin)
+            
+            context.update({
+                'data': formatted_data,
+                'page_obj': page_obj,
+                'search_query': search_query,
+                'form_action_url': reverse(self.form_action_url),
+                'display_pagination': display_pagination,
+                'is_admin': is_admin
+            })
+            
+            return context
+        except Exception as e:
+            error_logger.error(f'Get context data error: {str(e)}', exc_info=True)
+            print(e)
+            raise Exception(e)
 
     # 登録、編集、削除などの時に、現在のページと検索条件、データを保持するのに使用
     def get_preserved_context(self, request):
-        current_page = request.POST.get('current_page') or request.GET.get('page', '1')
-        search_query = request.POST.get('search_query') or request.GET.get('search', '')
-        
-        data = self.table_model.objects.all()
+        if request.method == 'DELETE':
+            json_data = json.loads(request.body)
+            current_page = json_data.get('current_page') or request.GET.get('page', '1')
+            search_query = json_data.get('search_query') or request.GET.get('search', '')
+        else:
+            current_page = request.POST.get('current_page') or request.GET.get('page', '1')
+            search_query = request.POST.get('search_query') or request.GET.get('search', '')
+
+        data = self.table_model
         display_pagination = True if data.count() > 10 else False
-        
+
         # 検索処理
         if search_query:
             data = data.filter(self.get_search_query(search_query))
         
         paginator = Paginator(data, 10)
-        
+         
         # ページ番号を整数に変換し、範囲をチェック
         try:
             page_number = int(current_page)
@@ -136,6 +156,7 @@ class BasicTableView(TemplateView):
         
         # データの整形
         formatted_data = self.format_data(page_obj)
+        is_admin = self.has_admin_permission(self.request.user)
 
         return {
             'data': formatted_data,
@@ -143,7 +164,8 @@ class BasicTableView(TemplateView):
             'search_query': search_query,
             'form_action_url': reverse(self.form_action_url),
             'headers': self.admin_table_header,
-            'display_pagination': display_pagination
+            'display_pagination': display_pagination,
+            'is_admin': is_admin
         }
 
     def post(self, request, *args, **kwargs):
@@ -175,6 +197,8 @@ class BasicTableView(TemplateView):
                     'html': html
                 })
             except Exception as e:
+                error_logger.error(f'Update error: {str(e)}', exc_info=True)
+                print(e)
                 return JsonResponse({
                     'status': 'error',
                     'message': f'エラーが発生しました: {str(e)}'
@@ -206,6 +230,8 @@ class BasicTableView(TemplateView):
                     'html': html
                 })
             except Exception as e:
+                error_logger.error(f'Create error: {str(e)}', exc_info=True)
+                print(e)
                 return JsonResponse({
                     'status': 'error',
                     'message': f'エラーが発生しました: {str(e)}'
@@ -226,6 +252,8 @@ class BasicTableView(TemplateView):
                 'html': html
             })
         except Exception as e:
+            error_logger.error(f'Delete error: {str(e)}', exc_info=True)
+            print(e)
             return JsonResponse({
                 'status': 'error',
                 'message': f'エラーが発生しました: {str(e)}'

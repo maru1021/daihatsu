@@ -1,6 +1,7 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import JsonResponse
 from django.shortcuts import redirect
+from .log import security_logger
 
 class Mixin(LoginRequiredMixin):
     """認可管理の親クラス"""
@@ -12,10 +13,18 @@ class Mixin(LoginRequiredMixin):
     def dispatch(self, request, *args, **kwargs):
         # ログインチェック（親クラスで実行）
         if not request.user.is_authenticated:
+            security_logger.warning(
+                f"未認証アクセス: {request.path} - IP: {request.META.get('REMOTE_ADDR')}"
+            )
             return self.handle_no_permission()
 
         # ユーザー権限チェック
         if not self.has_permission(request.user):
+            security_logger.warning(
+                f"権限なしアクセス: {request.user.username} - {request.path} - "
+                f"IP: {request.META.get('REMOTE_ADDR')} - "
+                f"グループ: {[g.name for g in request.user.groups.all()]}"
+            )
             if request.headers.get('HX-Request'):
                 return JsonResponse({
                     'status': 'error',

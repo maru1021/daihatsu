@@ -295,3 +295,12 @@ document.addEventListener('DOMContentLoaded', function() {
     cleanupModals();
     initializeTableMasterPage();
 });
+
+// サイドベーで移動時に実行
+// 削除するとページ遷移後の登録時などにバグる
+document.addEventListener('htmx:afterSettle', function(evt) {
+    if (document.getElementById('TableContainer')) {
+        cleanupModals();
+        initializeTableMasterPage();
+    }
+});

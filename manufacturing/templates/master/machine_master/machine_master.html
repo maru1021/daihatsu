@@ -1,50 +1,9 @@
+<!-- リロードなどの全体読み込み時 -->
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}マシン管理{% endblock %}
+{% block title %}設備管理 - Daihatsu{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <!-- トースト通知 -->
-    {% include 'components/toast.html' %}
-
-    <!-- メインコンテンツ -->
-    <div id="machineContent">
-        {% include 'master/machine_master/machine_master_content.html' %}
-    </div>
-</div>
-
-<!-- 新規追加モーダル -->
-{% include 'master/machine_master/machine_form.html' %}
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // HTMXのイベントハンドリング
-    document.body.addEventListener('htmx:afterRequest', function(evt) {
-        // POSTリクエストの場合のみJSONを処理
-        if (evt.detail.verb === 'post' && evt.detail.target.id === 'machineContent') {
-            try {
-                const response = JSON.parse(evt.detail.xhr.response);
-                if (evt.detail.successful) {
-                    // 成功メッセージを表示
-                    showToast('success', response.message);
-
-                    // コンテンツを更新
-                    if (response.html) {
-                        const machineContent = document.getElementById('machineContent');
-                        if (machineContent) {
-                            machineContent.innerHTML = response.html;
-                        }
-                    }
-                } else {
-                    // エラーメッセージを表示
-                    showToast('error', response.message);
-                }
-            } catch (e) {
-                console.error('JSONの解析に失敗しました:', e);
-            }
-        }
-    });
-});
-</script>
+  {% include 'master/machine_master/machine_master_content.html' %}
 {% endblock %}
