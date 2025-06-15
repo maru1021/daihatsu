@@ -1,7 +1,23 @@
 <!-- 編集用のフォーム -->
 <div class="mb-3">
-  <label for="id_name" class="form-label">ライン名 <span class="text-danger">*</span></label>
+  <label for="id_line_id" class="form-label">ライン<span class="text-danger">*</span></label>
+  <select class="form-select" id="id_line_id" name="line_id">
+    {% for line in lines %}
+    <option value="{{ line.id }}" {% if line.id == row.line_id %}selected{% endif %}>{{ line.name }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="mb-3">
+  <label for="id_name" class="form-label">設備名 <span class="text-danger">*</span></label>
   <input type="text" class="form-control" id="id_name" name="name" value="{{ row.name }}">
+</div>
+<div class="mb-3">
+  <label for="id_status" class="form-label">稼働状態 <span class="text-danger">*</span></label>
+  <select class="form-select" id="id_status" name="status" required>
+    <option value="active" {% if row.status == 'active' %}selected{% endif %}>稼働中</option>
+    <option value="maintenance" {% if row.status == 'maintenance' %}selected{% endif %}>メンテナンス中</option>
+    <option value="stopped" {% if row.status == 'stopped' %}selected{% endif %}>停止中</option>
+  </select>
 </div>
 <div class="mb-3">
   <label for="id_x_position" class="form-label">X座標 <span class="text-danger">*</span></label>

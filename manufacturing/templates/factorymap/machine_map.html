@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}設備マップ{% endblock %}
+
+{% block content %}
+<div class="map-container" style="position: absolute; top: 50px; left: 280px; right: 400px; bottom: 100px; overflow: auto; background-color: #f8f9fa;">
+    <div id="machine-list"
+         hx-get="{% url 'manufacturing:machine_map_partial' pk=pk %}"
+         hx-trigger="every 10s"
+         hx-swap="innerHTML"
+         hx-indicator="#loading-indicator"
+         hx-target="this">
+        {% include 'factorymap/machine_list_partial.html' %}
+    </div>
+    <div id="loading-indicator" style="display: none; position: absolute; top: 50%; left: 280px; transform: translate(-50%, -50%);">
+        <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+    </div>
+</div>
+
+<div class="tool-change-info" style="position: absolute; top: 0; right: 0; width: 320px; bottom: 100px; background-color: #ffffff; box-shadow: -4px 0 6px -1px rgba(0, 0, 0, 0.1); padding: 20px; overflow: auto;">
+    <h3 style="font-size: 1.2em; color: #1e293b; margin-bottom: 10px; padding-bottom: 5px; border-bottom: 1px solid #e2e8f0;">直近刃具交換予定</h3>
+    <table style="width: 100%; border-collapse: collapse;">
+        <thead>
+            <tr style="border-bottom: 2px solid #e2e8f0;">
+                <th style="text-align: left; padding: 10px; color: #64748b; font-weight: 200;">設備</th>
+                <th style="text-align: left; padding: 10px; color: #64748b; font-weight: 200;">ツール番号</th>
+                <th style="text-align: right; padding: 10px; color: #64748b; font-weight: 200;">残り台数</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for i in "12345678901234567890"|make_list %}
+            <tr style="border-bottom: 1px solid #e2e8f0; font-size: 15px;">
+                <td style="padding: 12px 10px; color: #1e293b;">設備{{ forloop.counter }}</td>
+                <td style="padding: 12px 10px; color: #1e293b;">T{{ forloop.counter }}</td>
+                <td style="padding: 12px 10px; text-align: right; color: #1e293b; font-weight: 500;">{{ forloop.counter|add:"100" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="production-info" style="position: absolute; bottom: 0; left: 100px; right: 0; height: 100px; background-color: #ffffff; box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.1); padding: 20px;">
+    <div style="display: flex; justify-content: space-around; align-items: center; height: 100%;">
+        <div class="info-box" style="text-align: center; padding: 0 30px; border-right: 1px solid #e2e8f0;">
+            <div style="font-size: 0.9em; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">当日目標</div>
+            <div style="font-size: 2em; font-weight: bold; color: #1e293b; font-family: 'Roboto', sans-serif;">3,000</div>
+        </div>
+        <div class="info-box" style="text-align: center; padding: 0 30px; border-right: 1px solid #e2e8f0;">
+            <div style="font-size: 0.9em; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">現時点目標</div>
+            <div style="font-size: 2em; font-weight: bold; color: #1e293b; font-family: 'Roboto', sans-serif;">1,500</div>
+        </div>
+        <div class="info-box" style="text-align: center; padding: 0 30px;">
+            <div style="font-size: 0.9em; color: #64748b; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em;">当日生産台数</div>
+            <div style="font-size: 2em; font-weight: bold; color: #1e293b; font-family: 'Roboto', sans-serif;">1,234</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

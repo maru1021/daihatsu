@@ -1,0 +1,25 @@
+{% for machine in machines %}
+<a href="#" class="machine-box"
+   style="position: absolute;
+          left: {{ machine.x_position }}px;
+          top: {{ machine.y_position }}px;
+          width: {{ machine.width }}px;
+          height: {{ machine.height }}px;
+          background-color: {% if machine.status == 'stopped' %}#e53e3e{% else %}#4a90e2{% endif %};
+          border-radius: 4px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1;
+          transition: all 0.3s ease;
+          text-decoration: none;">
+    <div class="machine-name" 
+         style="font-weight: bold; 
+                color: #ffffff; 
+                text-align: center;
+                width: 100%;
+                padding: 5px;">
+        {{ machine.name }}
+    </div>
+</a>
+{% endfor %}

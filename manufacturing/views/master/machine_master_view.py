@@ -1,4 +1,4 @@
-from manufacturing.models import Machine
+from manufacturing.models import Machine, Line
 from django.urls import reverse
 from manufacturing.mixin import ManufacturingPermissionMixin
 from daihatsu.views.basic_table_view import BasicTableView
@@ -15,25 +15,34 @@ class MachineMasterView(ManufacturingPermissionMixin, BasicTableView):
     delete_url = 'manufacturing:machine_delete'
     noti_text = '設備'
     
-    admin_table_header = ['設備名', 'ライン名', 'X座標', 'Y座標', '幅', '高さ', 'アクティブ', '操作']
-    user_table_header = ['設備名', 'ライン名', 'アクティブ']
-    search_fields = ['name']
+    admin_table_header = ['ライン名', '設備名', '稼働状態', 'X座標', 'Y座標', '幅', '高さ', 'アクティブ', '操作']
+    user_table_header = ['ライン名', '設備名', '稼働状態', 'アクティブ']
+    search_fields = ['name', 'line__name']
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['lines'] = Line.objects.filter(active=True).order_by('name')
+        return context
     
     def get_edit_data(self, data):
         try:
             response_data = {
                 'status': 'success',
                 'data': {
-                  'id': data.id,
-                  'name': data.name,
-                  'x_position': data.x_position,
-                  'y_position': data.y_position,
-                  'width': data.width,
-                  'height': data.height,
-                  'active': data.active
-              },
-              'edit_url': reverse(self.edit_url, kwargs={'pk': data.id}),
+                    'line_id': data.line.id,
+                    'line_name': data.line.name,
+                    'id': data.id,
+                    'name': data.name,
+                    'status': data.status,
+                    'x_position': data.x_position,
+                    'y_position': data.y_position,
+                    'width': data.width,
+                    'height': data.height,
+                    'active': data.active
+                },
+                'edit_url': reverse(self.edit_url, kwargs={'pk': data.id}),
             }
+            print(response_data)
             return response_data
         except Exception as e:
             error_logger.error(f'Get edit data error: {str(e)}', exc_info=True)
@@ -48,15 +57,18 @@ class MachineMasterView(ManufacturingPermissionMixin, BasicTableView):
             errors = {}
             name = data.get('name', '').strip()
             active = data.get('active') == 'on'
+            line_id = data.get('line_id')
 
+            if not line_id:
+                errors['line_id'] = 'ラインを選択してください。'
             if not name:
-                errors['name'] = 'ライン名は必須です。'
+                errors['name'] = '設備名は必須です。'
             elif active:
-                query = self.crud_model.objects.filter(name=name, active=True)
+                query = self.crud_model.objects.filter(name=name, active=True, line_id=line_id)
                 if pk:
                     query = query.exclude(id=pk)
                 if query.exists():
-                    errors['name'] = 'このライン名は既に使用されています。'
+                    errors['name'] = 'この設備は既に使用されています。'
             
             return errors
         except Exception as e:
@@ -67,6 +79,7 @@ class MachineMasterView(ManufacturingPermissionMixin, BasicTableView):
     def create_model(self, data):
         try:
             return self.crud_model.objects.create(
+                line_id=data.get('line_id'),
                 name=data.get('name', '').strip(),
                 x_position=int(data.get('x_position', 0)),
                 y_position=int(data.get('y_position', 0)),
@@ -81,7 +94,9 @@ class MachineMasterView(ManufacturingPermissionMixin, BasicTableView):
 
     def update_model(self, model, data):
         try:
+            model.line_id = data.get('line_id')
             model.name = data.get('name').strip()
+            model.status = data.get('status')
             model.x_position = int(data.get('x_position', 0))
             model.y_position = int(data.get('y_position', 0))
             model.width = int(data.get('width', 0))
@@ -102,7 +117,9 @@ class MachineMasterView(ManufacturingPermissionMixin, BasicTableView):
                     formatted_data.append({
                         'id': row.id,
                         'fields': [
+                            row.line.name,
                             row.name,
+                            row.status,
                             row.x_position,
                             row.y_position,
                             row.width,
