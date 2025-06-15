@@ -33,10 +33,7 @@ def generate_trusted_origins(prefix=''):
     
     for network_str in network_ranges:
         network = ipaddress.IPv4Network(network_str, strict=False)
-        # 最初の50個のIPのみ（パフォーマンス対策）
         for i, ip in enumerate(network.hosts()):
-            if i >= 50:
-                break
             if prefix:
                 origins.append(f'{prefix}{ip}')
             else:
