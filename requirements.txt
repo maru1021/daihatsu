@@ -1,0 +1,33 @@
+# ウェブフレームワーク
+Django>=5.2.2
+django-extensions>=3.2.0
+django-environ>=0.11.0
+django-debug-toolbar>=4.2.0
+
+# データベース接続用
+psycopg2-binary>=2.9.0
+mysqlclient>=2.2.0 
+mongoengine>=0.24.0
+pymongo>=4.0.0
+
+# データ分析などに使用するかも
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Excel操作用
+openpyxl>=3.1.0  
+
+# APIを使用するときに使用
+requests>=2.31.0
+
+# 画像などの処理用
+Pillow>=10.2.0
+
+# 日付計算用
+python-dateutil>=2.8.0
+
+# HTTPサーバー(gunicornは使用できない)
+waitress>=2.1.0
+
+# メモリの使用状況等の確認用
+psutil>=7.0.0
