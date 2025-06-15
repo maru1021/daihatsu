@@ -1,5 +1,5 @@
 {% for machine in machines %}
-<a href="#" class="machine-box"
+<a href="{% url 'manufacturing:machine_detail' machine.id %}" class="machine-box"
    style="position: absolute;
           left: {{ machine.x_position }}px;
           top: {{ machine.y_position }}px;

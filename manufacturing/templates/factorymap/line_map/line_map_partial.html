@@ -1,0 +1,27 @@
+<div class="map-container" style="position: absolute; top: 50px; left: 280px; right: 0; bottom: 0; overflow: auto; background-color: #f8f9fa;">
+  {% for line in lines %}
+  <a href="{% url 'manufacturing:machine_map' line.id %}" class="line-box"
+     style="position: absolute;
+            left: {{ line.x_position }}px;
+            top: {{ line.y_position }}px;
+            width: {{ line.width }}px;
+            height: {{ line.height }}px;
+            background-color: #4a90e2;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+            transition: all 0.3s ease;
+            text-decoration: none;">
+      <div class="line-name" 
+           style="font-weight: bold; 
+                  color: #ffffff; 
+                  text-align: center;
+                  width: 100%;
+                  padding: 5px;">
+          {{ line.name }}
+      </div>
+  </a>
+  {% endfor %}
+</div>

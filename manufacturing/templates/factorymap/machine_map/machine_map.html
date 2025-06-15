@@ -10,8 +10,9 @@
          hx-trigger="every 10s"
          hx-swap="innerHTML"
          hx-indicator="#loading-indicator"
-         hx-target="this">
-        {% include 'factorymap/machine_list_partial.html' %}
+         hx-target="this"
+         hx-headers='{"HX-Request": "true"}'>
+        {% include 'factorymap/machine_map/machine_list_partial.html' %}
     </div>
     <div id="loading-indicator" style="display: none; position: absolute; top: 50%; left: 280px; transform: translate(-50%, -50%);">
         <div style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; animation: spin 1s linear infinite;"></div>

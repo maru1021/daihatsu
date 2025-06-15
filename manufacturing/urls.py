@@ -3,7 +3,7 @@ from manufacturing.views.master.line_master_view import LineMasterView
 from manufacturing.views.master.machine_master_view import MachineMasterView
 from manufacturing.views.map.line_map_view import LineMapView
 from manufacturing.views.map.machine_map_view import MachineMapView
-
+from manufacturing.views.machine_detail import MachineDetailView
 app_name = 'manufacturing'
 
 urlpatterns = [
@@ -18,4 +18,5 @@ urlpatterns = [
     path('machine-master/<int:pk>/', MachineMasterView.as_view(), name='machine_master_pk'),
     path('machine-master/edit/<int:pk>/', MachineMasterView.as_view(), name='machine_edit'),
     path('machine-master/delete/<int:pk>/', MachineMasterView.as_view(), name='machine_delete'),
+    path('machine-detail/<int:pk>/', MachineDetailView.as_view(), name='machine_detail'),
 ]

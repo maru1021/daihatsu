@@ -3,12 +3,12 @@ from manufacturing.models import Line, Machine
 from django.db.models import Max
 
 class MachineMapView(TemplateView):
-    template_name = 'factorymap/machine_map.html'
+    template_name = 'factorymap/machine_map/machine_map.html'
     
     def get_template_names(self):
         """HTMXリクエストの場合は部分テンプレートを返す"""
         if self.request.headers.get('HX-Request'):
-            return ['factorymap/machine_list_partial.html']
+            return ['factorymap/machine_map/machine_list_partial.html']
         return [self.template_name]
     
     def get_context_data(self, **kwargs):
