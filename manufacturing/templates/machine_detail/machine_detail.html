@@ -13,13 +13,16 @@
                         <span class="badge {% if machine.status == 'stopped' %}bg-danger{% else %}bg-success{% endif %}">
                             {{ machine.get_status_display }}
                         </span>
+                        <span style="margin-left: 30px;">
+                            稼働率{{ operating_rate }}%
+                        </span>
                     </h3>
                 </div>
                 <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <h4 class="mb-3 mt-4">アラーム履歴</h4>
-                            <div class="table-responsive" style="max-height: 300px; overflow-y: auto;">
+                            <h4 class="mb-3 mt-4">アラーム履歴({{ alarm_count }}件)</h4>
+                            <div class="table-responsive" style="max-height: 600px; overflow-y: auto;">
                                 <table class="table table-hover">
                                     <thead class="sticky-top bg-white">
                                         <tr>
@@ -29,19 +32,15 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {% for alarm in machine.alarms.all|slice:":10" %}
+                                        {% for alarm in alarms %}
                                         <tr>
-                                            <td>{{ alarm.created_at|date:"Y/m/d H:i" }}</td>
+                                            <td>{{ alarm.updatedate|date:"Y/m/d H:i" }}</td>
                                             <td>{{ alarm.message }}</td>
-                                            <td>
-                                                <span class="badge {% if alarm.is_resolved %}bg-success{% else %}bg-danger{% endif %}">
-                                                    {{ alarm.get_status_display }}
-                                                </span>
-                                            </td>
+                                            <td>{{ alarm.timespan }}秒</td>
                                         </tr>
                                         {% empty %}
                                         <tr>
-                                            <td colspan="3" class="text-center">アラーム履歴はありません</td>
+                                            <td colspan="5" class="text-center">アラーム履歴はありません</td>
                                         </tr>
                                         {% endfor %}
                                     </tbody>
