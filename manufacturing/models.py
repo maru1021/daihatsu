@@ -47,3 +47,30 @@ class Machine(models.Model):
 
     def __str__(self):
         return f"{self.line.name} - {self.name}"
+
+
+class AlarmHistory(Document):
+    L1Name = StringField(max_length=200)
+    L0Name = StringField(max_length=200)
+    number = StringField(max_length=200)
+    updatedate = DateTimeField()
+    message = StringField(max_length=200)
+    enddate = DateTimeField()
+    level = IntField()
+    type = StringField(max_length=200)
+    timespan = IntField()
+    
+    meta = {
+        'collection': 'Alarm_History',
+        'abstract': True
+    }
+    
+    @classmethod
+    def from_server(cls, server_alias):
+        """指定されたサーバーからデータを取得する動的モデル"""
+        class DynamicL1(cls):
+            meta = {
+                'collection': 'Alarm_History',
+                'db_alias': server_alias  # MTLINK1, MTLINK2, MTLINK3のいずれか
+            }
+        return DynamicL1
