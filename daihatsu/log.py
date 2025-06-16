@@ -19,9 +19,9 @@ def setup_logger(name, log_file, level=logging.ERROR):
     )
     file_handler.setLevel(level)
 
-    # フォーマッタの設定
+    # フォーマッタの設定（CSV形式）
     formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        '%(asctime)s,%(name)s,%(levelname)s,%(message)s'
     )
     file_handler.setFormatter(formatter)
 
@@ -39,11 +39,17 @@ access_logger = setup_logger('access_logger', 'access.log', level=logging.INFO)
 # SQLロガーの作成
 sql_logger = setup_logger('sql_logger', 'sql.log', level=logging.DEBUG)
 
+# ジョブロガーの作成
+job_logger = setup_logger('job_logger', 'job.log', level=logging.INFO)
+
+#  資源管理ロガーの作成
+resource_logger = setup_logger('resource_logger', 'resource.log', level=logging.INFO)
+
 # セキュリティロガーの作成（認証、認可、CSRF等）
 security_logger = setup_logger('security_logger', 'security.log', level=logging.INFO)
 # セキュリティログ用のフォーマッタを設定
 security_formatter = logging.Formatter(
-    '%(asctime)s - %(message)s',
+    '%(asctime)s,%(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 security_logger.handlers[0].setFormatter(security_formatter)
@@ -52,7 +58,7 @@ security_logger.handlers[0].setFormatter(security_formatter)
 performance_logger = setup_logger('performance_logger', 'performance.log', level=logging.INFO)
 # パフォーマンスログ用のフォーマッタを設定
 performance_formatter = logging.Formatter(
-    '%(asctime)s - %(message)s',
+    '%(asctime)s,%(message)s',
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 performance_logger.handlers[0].setFormatter(performance_formatter)
@@ -70,7 +76,7 @@ sql_file_handler.setLevel(logging.DEBUG)
 
 # SQLログ用のフォーマッタを設定
 sql_formatter = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    '%(asctime)s,%(name)s,%(levelname)s,%(message)s'
 )
 sql_file_handler.setFormatter(sql_formatter)
 

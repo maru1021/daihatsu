@@ -21,8 +21,7 @@ class PerformanceMiddleware:
         memory_used = end_memory - start_memory
 
         performance_logger.info(
-            f"応答時間: {process_time:.3f}秒 - {request.path} - "
-            f"メモリ使用量: {memory_used:.2f}MB"
+            f"{process_time:.3f}秒, {memory_used:.2f}MB, {request.path}"
         )
 
         return response 
