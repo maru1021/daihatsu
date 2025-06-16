@@ -149,6 +149,24 @@ DATABASES = {
 #     }
 # }
 
+MONGODB_CONFIGS = [
+    ('MTLINK1', '10.69.200.6'),
+    ('MTLINK2', '10.69.200.7'),
+    ('MTLINK3', '10.69.200.8'),
+]
+
+# 自動的にaliasを設定
+for alias, host in MONGODB_CONFIGS:
+    mongoengine.connect(
+        db='MTLINKi',
+        host=host,
+        port=27017,
+        username='MTLINKi',
+        password='MTLINKi',
+        authentication_source='MTLINKi',
+        alias=alias
+    )
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
