@@ -22,6 +22,8 @@ export function initializeEditForm(data) {
         if (input) {
             if (input.type === 'checkbox') {
                 input.checked = value;
+            } else if (input.tagName === 'SELECT') {
+                input.value = value;
             } else {
                 input.value = value;
             }
