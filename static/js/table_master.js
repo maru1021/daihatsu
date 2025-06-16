@@ -173,8 +173,11 @@ function handleEditItem(e, editBtn) {
                 if (form) {
                     form.action = editUrl;
 
-                    // フォームの初期化
-                    initializeEditForm(data);
+                    // フォームの初期化が表示されてから実行
+                    // モーダル
+                    document.getElementById('EditModal').addEventListener('shown.bs.modal', function() {
+                        initializeEditForm(data);
+                    });
                 }
 
                 // モーダルを表示する前にクリーンアップ
