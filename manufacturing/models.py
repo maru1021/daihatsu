@@ -1,6 +1,6 @@
 from django.db import models
 from django.core.validators import MinValueValidator
-from mongoengine import Document, StringField, DateTimeField, IntField, ReferenceField
+from mongoengine import Document, StringField, DateTimeField, IntField
 
 class Line(models.Model):
     id = models.AutoField('ID', primary_key=True)

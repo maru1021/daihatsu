@@ -1,0 +1,28 @@
+{% if latest_resource %}
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">CPU使用率</h5>
+                <h2 class="text-primary" id="cpu-value">{{ latest_resource.cpu|floatformat:1 }}%</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">メモリ使用率</h5>
+                <h2 class="text-warning" id="memory-value">{{ latest_resource.memory|floatformat:1 }}%</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title">ディスク使用率</h5>
+                <h2 class="text-success" id="disk-value">{{ latest_resource.disk|floatformat:1 }}%</h2>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %} 

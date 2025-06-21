@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}リソースモニター{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">リソースモニター</h2>
+            
+            <!-- 最新のリソース状況 -->
+            {% include 'resource/latest_resources.html' %}
+            
+            <!-- グラフ表示エリア -->
+            {% include "components/chart/chartjs.html" with chart_id="resourceChart" chart_type="line" width=800 height=300 reload_url="/resource/data/" reload_interval=60000 chart_title="リソース使用状況" %}
+        </div>
+    </div>
+</div>
+{% endblock %} 
